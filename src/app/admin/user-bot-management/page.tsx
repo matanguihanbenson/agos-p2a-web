@@ -77,6 +77,11 @@ export default function UserBotManagement() {
   const [validatedBotId, setValidatedBotId] = useState('');
   const [botValidationStatus, setBotValidationStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid' | 'registered'>('idle');
 
+  // Bot management states
+  const [manageTab, setManageTab] = useState('assign');
+  const [pendingAssignment, setPendingAssignment] = useState<string | null>(null);
+  const [hasChanges, setHasChanges] = useState(false);
+
   // Fetch users created by current admin
   useEffect(() => {
     if (!currentUser) return;
@@ -295,11 +300,60 @@ export default function UserBotManagement() {
         assigned_at: operatorId ? new Date() : null,
         updated_at: new Date()
       });
+      setPendingAssignment(null);
+      setHasChanges(false);
       setShowManageModal(false);
       setSelectedItem(null);
     } catch (error) {
       console.error('Error assigning bot:', error);
     }
+  };
+
+  // Unregister bot
+  const handleUnregisterBot = async (botId: string, bot_id: string) => {
+    try {
+      // Remove bot from bots collection
+      await updateDoc(doc(db, 'bots', botId), {
+        deleted: true,
+        deleted_at: new Date(),
+        updated_at: new Date()
+      });
+
+      // Update registry to mark as unregistered
+      const registryQuery = query(
+        collection(db, 'bot_registry'),
+        where('bot_id', '==', bot_id)
+      );
+      const registrySnapshot = await getDocs(registryQuery);
+      
+      if (!registrySnapshot.empty) {
+        const registryDoc = registrySnapshot.docs[0];
+        await updateDoc(doc(db, 'bot_registry', registryDoc.id), {
+          is_registered: false,
+          unregistered_at: new Date()
+        });
+      }
+
+      setShowManageModal(false);
+      setSelectedItem(null);
+      setManageTab('assign');
+    } catch (error) {
+      console.error('Error unregistering bot:', error);
+    }
+  };
+
+  // Handle assignment change
+  const handleAssignmentChange = (operatorId: string) => {
+    setPendingAssignment(operatorId || null);
+    const currentAssignment = (selectedItem as BotData)?.assigned_to;
+    setHasChanges(operatorId !== currentAssignment);
+  };
+
+  // Get pending assignment user
+  const getPendingAssignmentUser = () => {
+    if (!pendingAssignment) return 'Unassigned';
+    const user = users.find(u => u.id === pendingAssignment);
+    return user ? `${user.firstname} ${user.lastname}` : 'Unknown User';
   };
 
   // Get role icon
@@ -811,7 +865,12 @@ export default function UserBotManagement() {
                   Manage {activeView === 'users' ? (selectedItem as User).firstname + ' ' + (selectedItem as User).lastname : (selectedItem as BotData).name}
                 </h3>
                 <button 
-                  onClick={() => setShowManageModal(false)}
+                  onClick={() => {
+                    setShowManageModal(false);
+                    setPendingAssignment(null);
+                    setHasChanges(false);
+                    setManageTab('assign');
+                  }}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   <X className="h-5 w-5" />
@@ -834,40 +893,185 @@ export default function UserBotManagement() {
                   </button>
                 </>
               ) : (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Assign to Operator</label>
-                    <select 
-                      value={(selectedItem as BotData).assigned_to || ''}
-                      onChange={(e) => handleAssignBot(selectedItem.id, e.target.value || null)}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                <div className="space-y-6">
+                  {/* Tab Navigation */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setManageTab('assign')}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                        manageTab === 'assign'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
                     >
-                      <option value="">Unassigned</option>
-                      {users.filter(u => u.isActive).map(user => (
-                        <option key={user.id} value={user.id}>
-                          {user.firstname} {user.lastname}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  {(selectedItem as BotData).assigned_to && (
-                    <button 
-                      onClick={() => handleAssignBot(selectedItem.id, null)}
-                      className="w-full bg-gray-500 text-white rounded-lg py-2 px-4 text-sm font-medium hover:bg-gray-600 transition-colors"
-                    >
-                      Remove Assignment
+                      Assignment
                     </button>
+                    <button
+                      onClick={() => setManageTab('unregister')}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                        manageTab === 'unregister'
+                          ? 'bg-red-500 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      Unregister
+                    </button>
+                  </div>
+
+                  {manageTab === 'assign' ? (
+                    <>
+                      {/* Current Assignment Section */}
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Current Assignment</h4>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <User className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {getBotAssignedUser(selectedItem as BotData)}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {(selectedItem as BotData).assigned_to ? 'Currently assigned' : 'No operator assigned'}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {(selectedItem as BotData).assigned_to && (
+                          <button 
+                            onClick={() => handleAssignmentChange('')}
+                            className="mt-3 w-full bg-gray-500 text-white rounded-lg py-2 px-3 text-sm font-medium hover:bg-gray-600 transition-colors"
+                          >
+                            Remove Current Assignment
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Assignment Section */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Assign to Operator</label>
+                        <select 
+                          value={pendingAssignment || (selectedItem as BotData).assigned_to || ''}
+                          onChange={(e) => handleAssignmentChange(e.target.value)}
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="">Select Operator</option>
+                          {users.filter(u => u.isActive).map(user => (
+                            <option key={user.id} value={user.id}>
+                              {user.firstname} {user.lastname}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Changes Preview */}
+                      {hasChanges && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <h4 className="text-sm font-medium text-blue-800 mb-2">Preview Changes</h4>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-600">From:</span>
+                              <span className="font-medium text-gray-900">
+                                {getBotAssignedUser(selectedItem as BotData)}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-600">To:</span>
+                              <span className="font-medium text-blue-800">
+                                {getPendingAssignmentUser()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-3">
+                        {hasChanges ? (
+                          <button 
+                            onClick={() => handleAssignBot(selectedItem.id, pendingAssignment)}
+                            className="flex-1 bg-blue-500 text-white rounded-lg py-2 px-4 text-sm font-medium hover:bg-blue-600 transition-colors"
+                          >
+                            Save Changes
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => {
+                              setShowManageModal(false);
+                              setPendingAssignment(null);
+                              setHasChanges(false);
+                              setManageTab('assign');
+                            }}
+                            className="flex-1 border border-gray-200 rounded-lg py-2 px-4 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                          >
+                            Close
+                          </button>
+                        )}
+                        
+                        {hasChanges && (
+                          <button 
+                            onClick={() => {
+                              setPendingAssignment(null);
+                              setHasChanges(false);
+                            }}
+                            className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    /* Unregister Tab */
+                    <div className="space-y-4">
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                          <div>
+                            <h4 className="text-sm font-medium text-red-800 mb-1">Unregister Bot</h4>
+                            <p className="text-sm text-red-700">
+                              This will remove the bot from your fleet and make it available for registration by other admins.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Bot Details</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Bot ID:</span>
+                            <span className="font-medium">{(selectedItem as BotData).bot_id}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Name:</span>
+                            <span className="font-medium">{(selectedItem as BotData).name}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Current Assignment:</span>
+                            <span className="font-medium">{getBotAssignedUser(selectedItem as BotData)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <button 
+                          onClick={() => handleUnregisterBot(selectedItem.id, (selectedItem as BotData).bot_id)}
+                          className="w-full bg-red-500 text-white rounded-lg py-2 px-4 text-sm font-medium hover:bg-red-600 transition-colors"
+                        >
+                          Confirm Unregister Bot
+                        </button>
+                        <button 
+                          onClick={() => setManageTab('assign')}
+                          className="w-full border border-gray-200 rounded-lg py-2 px-4 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
-              
-              <button 
-                onClick={() => setShowManageModal(false)}
-                className="w-full border border-gray-200 rounded-lg py-2 px-4 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>
