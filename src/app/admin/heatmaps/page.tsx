@@ -34,6 +34,9 @@ interface ReverseGeocodeResponse {
     country?: string;
     [key: string]: string | undefined;
   };
+  error?: string;
+  fallback?: boolean;
+  coordinates?: string;
   [key: string]: unknown;
 }
 
@@ -59,19 +62,11 @@ export default function Heatmaps() {
   const [reverseGeocode, setReverseGeocode] = useState<ReverseGeocodeResponse | null>(null);
   const [loadingGeocode, setLoadingGeocode] = useState(false);
 
-  // Utility function for reverse geocoding using OpenStreetMap Nominatim
+  // Utility function for reverse geocoding using internal API
   const getReverseGeocode = async (lat: number, lng: number): Promise<void> => {
     setLoadingGeocode(true);
     try {
-      // Add User-Agent header to comply with Nominatim usage policy
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&zoom=16`,
-        {
-          headers: {
-            'User-Agent': 'P2A-Heatmap-Viewer/1.0'
-          }
-        }
-      );
+      const response = await fetch(`/api/geocode?lat=${lat}&lng=${lng}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -82,7 +77,12 @@ export default function Heatmaps() {
       setReverseGeocode(data);
     } catch (error) {
       console.error('Error fetching reverse geocode:', error);
-      setReverseGeocode({ error: 'Failed to fetch address information' } as ReverseGeocodeResponse);
+      // Fallback to showing coordinates only
+      setReverseGeocode({ 
+        error: 'Address lookup unavailable',
+        fallback: true,
+        coordinates: `${lat.toFixed(4)}, ${lng.toFixed(4)}`
+      });
     } finally {
       setLoadingGeocode(false);
     }
@@ -751,11 +751,20 @@ export default function Heatmaps() {
                   {loadingGeocode ? (
                     <div className="flex items-center gap-2">
                       <div className="animate-spin rounded-full h-3 w-3 border border-green-500 border-t-transparent"></div>
-                      <span className="text-xs text-gray-600">Loading...</span>
+                      <span className="text-xs text-gray-600">Loading address...</span>
                     </div>
                   ) : reverseGeocode ? (
                     reverseGeocode.error ? (
-                      <div className="text-xs text-red-600">Unable to fetch address</div>
+                      <div className="space-y-2">
+                        <div className="text-xs text-orange-600 font-medium">
+                          {reverseGeocode.fallback ? 'Address lookup unavailable' : 'Unable to fetch address'}
+                        </div>
+                        {reverseGeocode.coordinates && (
+                          <div className="text-xs text-gray-600 font-mono">
+                            Coordinates: {reverseGeocode.coordinates}
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       <div className="space-y-2">
                         {reverseGeocode.address?.city && (
@@ -772,7 +781,7 @@ export default function Heatmaps() {
                       </div>
                     )
                   ) : (
-                    <div className="text-xs text-gray-500">Click refresh to load</div>
+                    <div className="text-xs text-gray-500">Click refresh to load address</div>
                   )}
                 </div>
               </div>
@@ -783,4 +792,3 @@ export default function Heatmaps() {
     </div>
   );
 }
-                       

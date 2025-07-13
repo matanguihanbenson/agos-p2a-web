@@ -151,6 +151,7 @@ const HeatmapViewer: React.FC<HeatmapViewerProps> = ({ areas, isAnimated }) => {
       polygon.on('click', function(this: L.Polygon, e: L.LeafletMouseEvent) {
         // Stop event propagation to prevent map zoom
         L.DomEvent.stopPropagation(e.originalEvent);
+        // Simply open the popup - no external API calls
         this.openPopup();
       });
 

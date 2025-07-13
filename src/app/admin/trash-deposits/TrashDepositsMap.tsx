@@ -86,12 +86,15 @@ const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
     });
   }, []);
 
-  // Reverse geocoding function
+  // Reverse geocoding function using internal API
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
-      );
+      const response = await fetch(`/api/geocode?lat=${lat}&lng=${lng}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
       
       if (data && data.display_name) {
@@ -111,6 +114,7 @@ const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
       return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
     } catch (error) {
       console.error('Reverse geocoding failed:', error);
+      // Fallback to coordinates only
       return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
     }
   };
@@ -346,7 +350,7 @@ const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
               this.setPopupContent(`
                 <div style="padding: 16px; color: #dc2626; text-align: center;">
                   <h3 style="margin: 0 0 8px 0; font-size: 14px;">❌ Error</h3>
-                  <p style="margin: 0; font-size: 12px;">Failed to load details. Click again to retry.</p>
+                  <p style="margin: 0; font-size: 12px;">Failed to load address details. Coordinates: ${markerLat.toFixed(4)}, ${markerLng.toFixed(4)}</p>
                 </div>
               `);
             }
