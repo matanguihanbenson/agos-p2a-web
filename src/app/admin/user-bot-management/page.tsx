@@ -17,11 +17,9 @@ import {
   Mail,
   Building,
   Award,
-  Zap,
   Shield,
   Edit,
-  X,
-  UserCheck
+  X
 } from 'lucide-react';
 import { collection, query, where, onSnapshot, Timestamp, addDoc, updateDoc, doc, getDocs } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
