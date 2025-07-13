@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import "../../globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,11 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AGOS - Autonomous Garbage-cleaning Operation System",
-  description: "Revolutionary bot technology for river cleanup and water quality monitoring",
+  title: "Admin Login - AGOS",
+  description: "Admin portal for AGOS management system",
 };
 
-export default function RootLayout({
+export default function AdminLoginLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
