@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   Bot, 
@@ -30,7 +31,8 @@ import {
   Eye,
   Navigation,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  Calendar
 } from 'lucide-react';
 
 export default function Home() {
@@ -341,9 +343,11 @@ export default function Home() {
 
             <div className="w-full">
               <div className="overflow-hidden">
-                <img 
+                <Image 
                   src="/img/agos-bot-image.png" 
                   alt="AGOS Autonomous Cleaning Bot" 
+                  width={600}
+                  height={400}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -431,7 +435,7 @@ export default function Home() {
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Get in Touch</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Interested in learning more about AGOS or partnering with us? 
-              We'd love to hear from you.
+              We&apos;d love to hear from you.
             </p>
           </div>
 

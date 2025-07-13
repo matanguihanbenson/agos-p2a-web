@@ -99,7 +99,7 @@ export interface Report {
     start: Date;
     end: Date;
   };
-  data: any; // Flexible data structure based on report type
+  data: Record<string, unknown>; // Flexible data structure based on report type
   generatedAt: Date;
   generatedBy: string;
   format: 'pdf' | 'excel' | 'csv';
@@ -147,7 +147,7 @@ export interface DashboardMetrics {
 }
 
 // API response types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = Record<string, unknown>> {
   success: boolean;
   data?: T;
   error?: string;
@@ -159,7 +159,7 @@ export interface ApiResponse<T = any> {
 export interface CreateUserForm {
   name: string;
   email: string;
-  role: User['role'];
+  role: AppUser['role'];
   assignedBots?: string[];
   location?: string;
 }
@@ -177,8 +177,8 @@ export interface CreateBotForm {
 
 // Filter and search types
 export interface UserFilters {
-  role?: User['role'];
-  status?: User['status'];
+  role?: AppUser['role'];
+  status?: AppUser['status'];
   search?: string;
 }
 
