@@ -53,33 +53,39 @@ export default function AdminLogin() {
     try {
       await signInWithEmailAndPassword(auth, formData.email, formData.password);
       // Redirect will happen automatically through useEffect
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
       
       // Handle specific Firebase auth errors
       let errorMessage = 'Failed to sign in. Please try again.';
       
-      switch (error.code) {
-        case 'auth/user-not-found':
-          errorMessage = 'No account found with this email address.';
-          break;
-        case 'auth/wrong-password':
-          errorMessage = 'Incorrect password. Please try again.';
-          break;
-        case 'auth/invalid-email':
-          errorMessage = 'Please enter a valid email address.';
-          break;
-        case 'auth/user-disabled':
-          errorMessage = 'This account has been disabled.';
-          break;
-        case 'auth/too-many-requests':
-          errorMessage = 'Too many failed attempts. Please try again later.';
-          break;
-        case 'auth/invalid-credential':
-          errorMessage = 'Invalid email or password. Please check your credentials.';
-          break;
-        default:
-          errorMessage = error.message || 'An unexpected error occurred.';
+      if (error && typeof error === 'object' && 'code' in error) {
+        const firebaseError = error as { code: string; message?: string };
+        
+        switch (firebaseError.code) {
+          case 'auth/user-not-found':
+            errorMessage = 'No account found with this email address.';
+            break;
+          case 'auth/wrong-password':
+            errorMessage = 'Incorrect password. Please try again.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Please enter a valid email address.';
+            break;
+          case 'auth/user-disabled':
+            errorMessage = 'This account has been disabled.';
+            break;
+          case 'auth/too-many-requests':
+            errorMessage = 'Too many failed attempts. Please try again later.';
+            break;
+          case 'auth/invalid-credential':
+            errorMessage = 'Invalid email or password. Please check your credentials.';
+            break;
+          default:
+            errorMessage = firebaseError.message || 'An unexpected error occurred.';
+        }
+      } else {
+        errorMessage = 'An unexpected error occurred.';
       }
       
       setError(errorMessage);

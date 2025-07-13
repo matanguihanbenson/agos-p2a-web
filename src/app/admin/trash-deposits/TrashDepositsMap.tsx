@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -36,6 +36,12 @@ interface TrashDepositsMapProps {
   selectedTrashType?: string;
 }
 
+// Remove or replace the any type with proper typing
+interface MapInstance {
+  setView: (center: [number, number], zoom: number) => void;
+  // Add other map methods as needed
+}
+
 const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
   locations,
   onLocationSelect,
@@ -56,74 +62,18 @@ const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
     }
   };
 
-  const createCustomIcon = (density: string, isSelected: boolean = false) => {
+  // Fix the function signature to remove unused parameter
+  const getTrashIcon = useCallback((density: string) => {
     const color = getDensityColor(density);
-    const size = isSelected ? 40 : 30;
-    const borderWidth = isSelected ? 4 : 2;
     
-    return L.divIcon({
-      className: 'custom-marker',
-      html: `
-        <div style="
-          width: ${size}px;
-          height: ${size}px;
-          background-color: ${color};
-          border: ${borderWidth}px solid white;
-          border-radius: 50%;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-weight: bold;
-          font-size: ${size > 30 ? '14px' : '12px'};
-          position: relative;
-          transform: translate(-50%, -50%);
-        ">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-          </svg>
-        </div>
-      `,
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2],
-    });
-  };
-
-  const getTrashIcon = (type: string, density: string, isSelected: boolean = false) => {
-    const color = getDensityColor(density);
-    const size = isSelected ? 35 : 28;
-    const borderWidth = isSelected ? 3 : 2;
-    
-    const icons: { [key: string]: string } = {
-      plasticBottles: `<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-        <path d="M7 2v2c0 .55.45 1 1 1h1v1H7c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-2V5h1c.55 0 1-.45 1-1V2H7zm2 3h6v1H9V5zm0 3h6v8H9V8z"/>
-      </svg>`,
-      foodContainers: `<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-        <path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3s-3 1.34-3 3c0 .35.07.69.18 1H8.82C8.93 5.69 9 5.35 9 5c0-1.66-1.34-3-3-3S3 3.34 3 5c0 .35.07.69.18 1H1c-.55 0-1 .45-1 1s.45 1 1 1h1.64L4 19c.1 1.1 1 2 2.1 2h11.8c1.1 0 2-.9 2.1-2l1.36-11H23c.55 0 1-.45 1-1s-.45-1-1-1z"/>
-      </svg>`,
-      plasticBags: `<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-        <path d="M8 6v2h8V6c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2zm10 2v10c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V8H4c-.55 0-1-.45-1-1s.45-1 1-1h16c.55 0 1 .45 1 1s-.45 1-1 1h-2z"/>
-      </svg>`,
-      metalCans: `<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 16H6c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1h12c.55 0 1 .45 1 1v12c0 .55-.45 1-1 1z"/>
-        <circle cx="12" cy="12" r="3"/>
-      </svg>`,
-      other: `<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-      </svg>`
-    };
-
     return L.divIcon({
       className: 'custom-trash-marker',
       html: `
         <div style="
-          width: ${size}px;
-          height: ${size}px;
+          width: 28px;
+          height: 28px;
           background-color: ${color};
-          border: ${borderWidth}px solid white;
           border-radius: 8px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -131,13 +81,15 @@ const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
           position: relative;
           transform: translate(-50%, -50%);
         ">
-          ${icons[type] || icons.other}
+          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+            <path d="M7 2v2c0 .55.45 1 1 1h1v1H7c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-2V5h1c.55 0 1-.45 1-1V2H7zm2 3h6v1H9V5zm0 3h6v8H9V8z"/>
+          </svg>
         </div>
       `,
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2],
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
     });
-  };
+  }, []);
 
   // Reverse geocoding function
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
@@ -177,7 +129,13 @@ const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
 
   // Get trash type details
   const getTrashTypeDetails = (type: string, count: number) => {
-    const details: { [key: string]: any } = {
+    const details: Record<string, {
+      name: string;
+      icon: string;
+      description: string;
+      environmental_impact: string;
+      recyclable: boolean;
+    }> = {
       plasticBottles: {
         name: 'Plastic Bottles',
         icon: '🍶',
@@ -277,7 +235,7 @@ const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
           
           const marker = L.marker(
             [markerLat, markerLng],
-            { icon: getTrashIcon(trashType, location.density, isSelected) }
+            { icon: getTrashIcon(location.density) }
           );
 
           // Get trash type details
@@ -412,7 +370,7 @@ const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
       const group = new L.FeatureGroup(markersRef.current);
       mapInstanceRef.current.fitBounds(group.getBounds().pad(0.1));
     }
-  }, [locations, selectedLocation, selectedTrashType, onLocationSelect]);
+  }, [locations, selectedLocation, selectedTrashType, onLocationSelect, getTrashIcon]);
 
   // Center map on selected location
   useEffect(() => {
