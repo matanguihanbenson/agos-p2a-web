@@ -194,7 +194,7 @@ export default function LiveVideoViewer() {
                       </div>
                       
                       {/* Bot info overlay */}
-                      <div className="absolute bottom-4 left-4 bg-black/50 text-white text-sm px-3 py-2 rounded">
+                      <div className="absolute top-4 left-4 bg-black/50 text-white text-sm px-3 py-2 rounded">
                         <div className="flex items-center space-x-4">
                           <div className="flex items-center space-x-1">
                             <Battery className="h-4 w-4" />
@@ -353,80 +353,10 @@ export default function LiveVideoViewer() {
                 </div>
               </div>
             </div>
-
-            {/* Stream Settings */}
-            <div className="bg-white rounded-xl shadow-sm border">
-              <div className="p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Stream Settings</h3>
-              </div>
-              <div className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Video Quality</label>
-                  <select className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    <option value="1080p">HD 1080p</option>
-                    <option value="720p">HD 720p</option>
-                    <option value="480p">SD 480p</option>
-                    <option value="auto">Auto</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Frame Rate</label>
-                  <select className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    <option value="30">30 FPS</option>
-                    <option value="60">60 FPS</option>
-                    <option value="15">15 FPS</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Detection Overlay</label>
-                  <div className="space-y-2">
-                    <label className="flex items-center">
-                      <input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
-                      <span className="ml-2 text-sm text-gray-700">Show trash detection boxes</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
-                      <span className="ml-2 text-sm text-gray-700">Show bot telemetry</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input type="checkbox" className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
-                      <span className="ml-2 text-sm text-gray-700">Show water quality data</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Recordings */}
-            <div className="bg-white rounded-xl shadow-sm border">
-              <div className="p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Recent Recordings</h3>
-              </div>
-              <div className="p-6">
-                <div className="space-y-3">
-                  {[
-                    { name: 'AGOS-001_2024-01-15_14-30', duration: '1:45:23', size: '2.3 GB' },
-                    { name: 'AGOS-002_2024-01-15_12-15', duration: '2:12:45', size: '3.1 GB' },
-                    { name: 'AGOS-001_2024-01-14_16-45', duration: '0:58:12', size: '1.2 GB' },
-                  ].map((recording, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{recording.name}</p>
-                        <p className="text-xs text-gray-600">{recording.duration} • {recording.size}</p>
-                      </div>
-                      <button className="text-blue-600 hover:text-blue-700">
-                        <Download className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
     </div>
   );
 }
+     

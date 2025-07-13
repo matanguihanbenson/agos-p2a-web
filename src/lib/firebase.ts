@@ -8,13 +8,14 @@ import { getAnalytics } from 'firebase/analytics';
 // TODO: Add your Firebase configuration
 // Replace this with your actual Firebase config from the Firebase Console
 const firebaseConfig = {
-  apiKey: "your-api-key",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "your-app-id",
-  measurementId: "your-measurement-id"
+  apiKey: "AIzaSyAVtqDT-qoLscm_SIozlrYwpO87KdWdUZI",
+  authDomain: "p2a-hackathon.firebaseapp.com",
+  databaseURL: "https://p2a-hackathon-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "p2a-hackathon",
+  storageBucket: "p2a-hackathon.firebasestorage.app",
+  messagingSenderId: "1075675221951",
+  appId: "1:1075675221951:web:7d49ce764970065ac45b0a",
+  measurementId: "G-BKLMC9QYXL"
 };
 
 // Initialize Firebase

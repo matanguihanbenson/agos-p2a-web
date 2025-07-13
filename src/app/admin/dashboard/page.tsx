@@ -1,32 +1,15 @@
 'use client';
 
 import React from 'react';
-import { 
-  Bot, 
-  Users, 
-  Activity, 
-  AlertTriangle, 
-  TrendingUp, 
-  MapPin, 
-  Battery,
-  Wifi,
-  Droplets,
-  Recycle,
-  Settings,
-  Bell,
-  MoreHorizontal,
-  Plus,
-  RefreshCw
-} from 'lucide-react';
-
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,8 +18,35 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Bot,
+  Users,
+  Recycle,
+  AlertTriangle,
+  Bell,
+  Settings,
+  RefreshCw,
+  Battery,
+  Wifi,
+  MoreHorizontal,
+  Plus,
+  TrendingUp,
+  MapPin,
+} from 'lucide-react';
 
 export default function AdminDashboard() {
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/auth/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Header */}
@@ -81,7 +91,7 @@ export default function AdminDashboard() {
                 <DropdownMenuItem>Profile</DropdownMenuItem>
                 <DropdownMenuItem>Settings</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Log out</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -422,3 +432,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
