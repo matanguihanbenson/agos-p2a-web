@@ -39,7 +39,7 @@ export default function AdminDashboard() {
   const handleLogout = async () => {
     try {
       await logout();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Logout failed:', error);
     }
   };
@@ -287,7 +287,7 @@ export default function AdminDashboard() {
                     time: '2 hours ago',
                     event: 'AGOS-002 navigation system updated',
                     type: 'success',
-                  }].map((activity, index) => (
+                  }].map((activity: { time: string; event: string; type: string }, index: number) => (
                     <div key={index} className="flex items-start space-x-4 p-3 rounded-lg hover:bg-slate-50 transition-colors">
                       <div className={`w-3 h-3 rounded-full mt-2 shadow-sm ${
                         activity.type === 'success' ? 'bg-gradient-to-r from-emerald-400 to-green-500' :
@@ -403,5 +403,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
-    
-            
+

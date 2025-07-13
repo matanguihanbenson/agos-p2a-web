@@ -9,7 +9,6 @@ import {
   Filter,
   Edit,
   Trash2,
-  Shield,
   MapPin,
   Battery,
   Wifi,
