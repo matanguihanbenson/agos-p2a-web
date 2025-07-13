@@ -6,33 +6,24 @@ import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   Bot, 
-  Waves, 
-  Leaf, 
   Users, 
   BarChart3, 
-  Shield,
   ArrowRight,
   Play,
-  Star,
-  MapPin,
-  Zap,
-  Droplets,
   Menu,
   X,
   LogOut,
   User,
   Recycle,
   Activity,
-  Globe,
   Download,
   Mail,
   Phone,
   Github,
   Eye,
   Navigation,
-  FileText,
-  AlertTriangle,
-  Calendar
+  Calendar,
+  Droplets
 } from 'lucide-react';
 
 export default function Home() {
@@ -502,6 +493,15 @@ export default function Home() {
               </ul>
             </div>
           </div>
+          
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
+            <p>&copy; 2025 AGOS Systems. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
             <p>&copy; 2025 AGOS Systems. All rights reserved.</p>
