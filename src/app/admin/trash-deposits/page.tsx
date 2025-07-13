@@ -1,13 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { 
   MapPin, 
   Filter,
-  Search,
   BarChart3,
-  PieChart,
   RefreshCw,
   Download,
   Layers,
@@ -30,11 +28,25 @@ const TrashDepositsMap = dynamic(() => import('@/app/admin/trash-deposits/TrashD
   )
 });
 
+interface TrashLocation {
+  id: string;
+  area: string;
+  coordinates: [number, number];
+  totalItems: number;
+  breakdown: {
+    plasticBottles: number;
+    foodContainers: number;
+    plasticBags: number;
+    metalCans: number;
+    other: number;
+  };
+  density: string;
+}
+
 export default function TrashDeposits() {
   const [selectedArea, setSelectedArea] = useState('all');
-  const [selectedTimeframe, setSelectedTimeframe] = useState('week');
   const [viewMode, setViewMode] = useState('map'); // 'map' or 'chart'
-  const [selectedLocation, setSelectedLocation] = useState<any>(null);
+  const [selectedLocation, setSelectedLocation] = useState<TrashLocation | null>(null);
   const [selectedTrashType, setSelectedTrashType] = useState('all');
 
   // Updated data for Calapan City rivers
@@ -145,7 +157,7 @@ export default function TrashDeposits() {
     }
   };
 
-  const handleLocationSelect = (location: any) => {
+  const handleLocationSelect = (location: TrashLocation) => {
     setSelectedLocation(location);
   };
 
@@ -499,4 +511,3 @@ export default function TrashDeposits() {
     </div>
   );
 }
-                      

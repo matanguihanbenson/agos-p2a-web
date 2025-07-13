@@ -26,7 +26,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 export default function UserBotManagement() {
   const [activeTab, setActiveTab] = useState('users');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
 
   // Mock data for users
   const users = [
@@ -154,7 +153,7 @@ export default function UserBotManagement() {
             <p className="text-slate-600 mt-1">Manage field operators and bot assignments</p>
           </div>
           
-          <Button onClick={() => setShowAddModal(true)} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+          <Button onClick={() => console.log('Add', activeTab)} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
             <Plus className="h-4 w-4 mr-2" />
             Add {activeTab === 'users' ? 'User' : 'Bot'}
           </Button>

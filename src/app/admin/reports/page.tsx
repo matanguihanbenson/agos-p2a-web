@@ -4,12 +4,10 @@ import React, { useState } from 'react';
 import { 
   FileText, 
   Download, 
-  Filter,
   TrendingUp,
   PieChart,
   BarChart3,
   Map,
-  Search,
   RefreshCw
 } from 'lucide-react';
 
@@ -306,5 +304,5 @@ export default function AdminReports() {
     </div>
   );
 }
-
+  
                 

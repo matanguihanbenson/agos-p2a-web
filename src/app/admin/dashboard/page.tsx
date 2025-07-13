@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -314,7 +314,6 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent className="p-6 space-y-3">
                 <Button 
-                  className="w-full justify-start h-11 text-left font-medium" 
                   variant="outline" 
                   className="w-full justify-start h-11 hover:bg-blue-50 hover:border-blue-300 border-slate-200 group transition-all duration-200"
                 >
@@ -322,7 +321,6 @@ export default function AdminDashboard() {
                   <span className="text-slate-700 group-hover:text-blue-700">Add Field Operator</span>
                 </Button>
                 <Button 
-                  className="w-full justify-start h-11 text-left font-medium" 
                   variant="outline" 
                   className="w-full justify-start h-11 hover:bg-green-50 hover:border-green-300 border-slate-200 group transition-all duration-200"
                 >
@@ -330,7 +328,6 @@ export default function AdminDashboard() {
                   <span className="text-slate-700 group-hover:text-green-700">Add New Bot</span>
                 </Button>
                 <Button 
-                  className="w-full justify-start h-11 text-left font-medium" 
                   variant="outline" 
                   className="w-full justify-start h-11 hover:bg-purple-50 hover:border-purple-300 border-slate-200 group transition-all duration-200"
                 >
@@ -338,7 +335,6 @@ export default function AdminDashboard() {
                   <span className="text-slate-700 group-hover:text-purple-700">View Reports</span>
                 </Button>
                 <Button 
-                  className="w-full justify-start h-11 text-left font-medium" 
                   variant="outline" 
                   className="w-full justify-start h-11 hover:bg-orange-50 hover:border-orange-300 border-slate-200 group transition-all duration-200"
                 >
@@ -351,7 +347,7 @@ export default function AdminDashboard() {
             {/* Environmental Metrics */}
             <Card className="border-blue-200 shadow-lg bg-gradient-to-br from-blue-50/50 to-indigo-50/50 backdrop-blur">
               <CardHeader className="border-b border-blue-100">
-                <CardTitle className="text-lg text-blue-900">Today's Metrics</CardTitle>
+                <CardTitle className="text-lg text-blue-900">Today&apos;s Metrics</CardTitle>
                 <CardDescription className="text-blue-600">Environmental monitoring data</CardDescription>
               </CardHeader>
               <CardContent className="p-6 space-y-4">
@@ -403,4 +399,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-

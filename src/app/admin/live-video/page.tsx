@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { 
-  Video, 
   VideoOff, 
   Volume2, 
   VolumeX, 
@@ -12,11 +11,9 @@ import {
   Camera,
   Circle,
   Download,
-  Settings,
   Wifi,
   Battery,
   MapPin,
-  Clock,
   Pause,
   Play,
   SkipBack,
@@ -359,4 +356,3 @@ export default function LiveVideoViewer() {
     </div>
   );
 }
-     
