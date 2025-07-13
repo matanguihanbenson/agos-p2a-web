@@ -1,17 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  FileText, 
-  Download, 
+import {
+  FileText,
+  Download,
   MapPin,
   BarChart3,
   TrendingUp,
-  AlertTriangle,
   Play,
   Plus,
   X,
-  Eye
+  Eye,
+  PieChart,
+  Droplets,
+  Bot,
+  Gauge,
+  Target
 } from 'lucide-react';
 
 type ReportType = {
@@ -34,11 +38,7 @@ export default function AdminReports() {
     { id: 'volume-trends', name: 'Monthly/Quarterly Volume Trends', category: 'environmental' },
     { id: 'hotspot-mapping', name: 'Hotspot Mapping & Dump Sites', category: 'analysis' },
     { id: 'water-quality', name: 'Water Quality Report', category: 'environmental' },
-    { id: 'bot-performance', name: 'Bot Performance Summary', category: 'operational' },
-    { id: 'community-performance', name: 'Community Performance', category: 'analysis' },
-    { id: 'incident-logs', name: 'Incident & Anomaly Logs', category: 'operational' },
-    { id: 'recyclable-ratio', name: 'Recyclable vs Non-recyclable', category: 'environmental' },
-    { id: 'environmental-impact', name: 'Environmental Impact Progress', category: 'analysis' }
+    { id: 'bot-performance', name: 'Bot Performance Summary', category: 'operational' }
   ];
 
   const areas = [
@@ -94,34 +94,6 @@ export default function AdminReports() {
           requiresAreas: false,
           defaultTimeline: 'week'
         };
-      case 'community-performance':
-        return {
-          ...config,
-          allowedTimelines: ['week', 'month', 'quarter', 'year', 'custom'],
-          allowedComparisons: ['none', 'areas', 'timelines'],
-          defaultTimeline: 'month'
-        };
-      case 'incident-logs':
-        return {
-          ...config,
-          allowedTimelines: ['day', 'week', 'month', 'custom'],
-          allowedComparisons: ['none', 'areas', 'timelines'],
-          defaultTimeline: 'week'
-        };
-      case 'recyclable-ratio':
-        return {
-          ...config,
-          allowedTimelines: ['week', 'month', 'quarter', 'year', 'custom'],
-          allowedComparisons: ['none', 'areas', 'timelines'],
-          defaultTimeline: 'month'
-        };
-      case 'environmental-impact':
-        return {
-          ...config,
-          allowedTimelines: ['month', 'quarter', 'year', 'custom'],
-          allowedComparisons: ['none', 'areas', 'timelines'],
-          defaultTimeline: 'quarter'
-        };
       default:
         return config;
     }
@@ -133,12 +105,12 @@ export default function AdminReports() {
   const handleReportTypeChange = (newType: string) => {
     setSelectedReportType(newType);
     const newConfig = getReportConfig();
-    
+
     // Reset timeline if current one is not allowed
     if (!newConfig.allowedTimelines.includes(timeline)) {
       setTimeline(newConfig.defaultTimeline);
     }
-    
+
     // Reset comparison mode if current one is not allowed
     if (!newConfig.allowedComparisons.includes(comparisonMode)) {
       setComparisonMode('none');
@@ -163,8 +135,8 @@ export default function AdminReports() {
               <h1 className="text-3xl font-bold text-gray-900">Reports & Analytics</h1>
               <p className="text-gray-600 mt-1">Environmental monitoring and system performance insights</p>
             </div>
-            
-            <button 
+
+            <button
               onClick={() => setShowGenerateModal(true)}
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
             >
@@ -182,35 +154,37 @@ export default function AdminReports() {
           <div className="bg-white rounded-xl shadow-sm border">
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Trash Type Distribution - Pasig River</h3>
-                  <p className="text-sm text-gray-600">January 2024 • Last updated 2 hours ago</p>
+                <div className="flex items-center space-x-3">
+                  <div className="bg-blue-100 p-2 rounded-lg">
+                    <PieChart className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Detected Trash Distribution - Pasig River</h3>
+                    <p className="text-sm text-gray-600">January 2024 • Autonomous detection data</p>
+                  </div>
                 </div>
-                <button className="text-blue-600 hover:text-blue-700">
+                <button className="text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors">
                   <Download className="h-4 w-4" />
                 </button>
               </div>
             </div>
             <div className="p-6">
               {/* Mock Pie Chart */}
-              <div className="relative h-48 mb-4">
+              <div className="relative h-48 mb-6">
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-32 h-32 rounded-full border-8 border-blue-500 border-r-green-500 border-b-yellow-500 border-l-purple-500"></div>
                 </div>
               </div>
-              <div className="space-y-2">
-                {/*
-                  Mock data for pie chart legend
-                */}
+              <div className="space-y-3">
                 {['Plastic Bottles', 'Food Containers', 'Plastic Bags', 'Metal Cans'].map((type, i) => (
-                  <div key={i} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center space-x-2">
-                      <div className={`w-3 h-3 rounded-full ${['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500'][i]}`}></div>
-                      <span>{type}</span>
+                  <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-4 h-4 rounded-full ${['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500'][i]}`}></div>
+                      <span className="font-medium text-gray-900">{type}</span>
                     </div>
                     <div className="text-right">
-                      <span className="font-medium">{['542 items', '298 items', '186 items', '142 items'][i]}</span>
-                      <span className="text-gray-500 ml-2">({['43.5%', '23.9%', '14.9%', '11.4%'][i]})</span>
+                      <span className="font-semibold text-gray-900">{['542', '298', '186', '142'][i]}</span>
+                      <span className="text-gray-500 text-sm ml-1">({['43.5%', '23.9%', '14.9%', '11.4%'][i]})</span>
                     </div>
                   </div>
                 ))}
@@ -222,37 +196,42 @@ export default function AdminReports() {
           <div className="bg-white rounded-xl shadow-sm border">
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Monthly Trash Volume Trends</h3>
-                  <p className="text-sm text-gray-600">Q4 2023 - Q1 2024 • All Areas</p>
+                <div className="flex items-center space-x-3">
+                  <div className="bg-green-100 p-2 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Bot Collection Volume Trends</h3>
+                    <p className="text-sm text-gray-600">Q4 2023 - Q1 2024 • Automated collection data</p>
+                  </div>
                 </div>
-                <button className="text-blue-600 hover:text-blue-700">
+                <button className="text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors">
                   <Download className="h-4 w-4" />
                 </button>
               </div>
             </div>
             <div className="p-6">
               {/* Mock Line Chart */}
-              <div className="h-48 bg-gray-50 rounded-lg flex items-end justify-around p-4 mb-4">
+              <div className="h-48 bg-gray-50 rounded-lg flex items-end justify-around p-4 mb-6">
                 {[60, 75, 45, 80, 65, 90].map((height, i) => (
-                  <div key={i} className="bg-blue-500 rounded-t" style={{ height: `${height}%`, width: '20px' }}></div>
+                  <div key={i} className="bg-gradient-to-t from-blue-500 to-blue-400 rounded-t shadow-sm" style={{ height: `${height}%`, width: '20px' }}></div>
                 ))}
               </div>
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-600">Total Collected</p>
-                  <p className="text-xl font-bold">1,247 kg</p>
-                  <p className="text-green-600">+15% vs last period</p>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
+                  <p className="text-sm text-green-700 font-medium">Total Collected</p>
+                  <p className="text-xl font-bold text-green-900">1,247 kg</p>
+                  <p className="text-xs text-green-600">+15% vs last period</p>
                 </div>
-                <div>
-                  <p className="text-gray-600">Peak Month</p>
-                  <p className="text-xl font-bold">January</p>
-                  <p className="text-blue-600">327 kg collected</p>
+                <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm text-blue-700 font-medium">Peak Month</p>
+                  <p className="text-xl font-bold text-blue-900">January</p>
+                  <p className="text-xs text-blue-600">327 kg by bots</p>
                 </div>
-                <div>
-                  <p className="text-gray-600">Trend</p>
-                  <p className="text-xl font-bold">Increasing</p>
-                  <p className="text-yellow-600">Requires attention</p>
+                <div className="text-center p-3 bg-orange-50 rounded-lg border border-orange-200">
+                  <p className="text-sm text-orange-700 font-medium">Collection Rate</p>
+                  <p className="text-xl font-bold text-orange-900">92.3%</p>
+                  <p className="text-xs text-orange-600">Bot efficiency</p>
                 </div>
               </div>
             </div>
@@ -262,36 +241,59 @@ export default function AdminReports() {
           <div className="bg-white rounded-xl shadow-sm border">
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Water Quality Report</h3>
-                  <p className="text-sm text-gray-600">Real-time monitoring • All zones</p>
+                <div className="flex items-center space-x-3">
+                  <div className="bg-cyan-100 p-2 rounded-lg">
+                    <Droplets className="h-5 w-5 text-cyan-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Water Quality Report</h3>
+                    <p className="text-sm text-gray-600">Real-time monitoring • All zones</p>
+                  </div>
                 </div>
-                <button className="text-blue-600 hover:text-blue-700">
+                <button className="text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors">
                   <Download className="h-4 w-4" />
                 </button>
               </div>
             </div>
             <div className="p-6">
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-2 gap-4 mb-6">
                 {/*
                   Mock data for water quality indicators
                 */}
                 {['pH Levels', 'Dissolved O₂', 'Turbidity', 'Temperature'].map((label, i) => (
-                  <div key={i} className="bg-green-50 p-4 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-green-700">{label}</span>
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                        {['Good', 'Excellent', 'Moderate', 'Normal'][i]}
+                  <div key={i} className={`p-4 rounded-lg border ${i === 0 ? 'bg-green-50 border-green-200' :
+                      i === 1 ? 'bg-blue-50 border-blue-200' :
+                        i === 2 ? 'bg-yellow-50 border-yellow-200' :
+                          'bg-red-50 border-red-200'
+                    }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`text-sm font-medium ${i === 0 ? 'text-green-700' :
+                          i === 1 ? 'text-blue-700' :
+                            i === 2 ? 'text-yellow-700' :
+                              'text-red-700'
+                        }`}>{label}</span>
+                      <span className={`text-xs px-2 py-1 rounded-full ${i === 0 ? 'bg-green-100 text-green-700' :
+                          i === 1 ? 'bg-blue-100 text-blue-700' :
+                            i === 2 ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-red-100 text-red-700'
+                        }`}>
+                        {['Good', 'Excellent', 'Moderate', 'Critical'][i]}
                       </span>
                     </div>
-                    <p className="text-2xl font-bold text-green-900">
+                    <p className={`text-2xl font-bold ${i === 0 ? 'text-green-900' :
+                        i === 1 ? 'text-blue-900' :
+                          i === 2 ? 'text-yellow-900' :
+                            'text-red-900'
+                      }`}>
                       {i === 0 ? '7.4' : i === 1 ? '8.5 mg/L' : i === 2 ? '12 NTU' : '26.8°C'}
                     </p>
                   </div>
                 ))}
               </div>
-              <div className="text-sm text-gray-600">
-                <p><strong>Recommendation:</strong> Monitor turbidity levels in Zone 3. Consider increased filtration.</p>
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-800">
+                  <strong>Recommendation:</strong> Monitor turbidity levels in Zone 3. Consider increased filtration systems for optimal clarity.
+                </p>
               </div>
             </div>
           </div>
@@ -300,203 +302,148 @@ export default function AdminReports() {
           <div className="bg-white rounded-xl shadow-sm border">
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Bot Performance Summary</h3>
-                  <p className="text-sm text-gray-600">Last 7 days • 12 active bots</p>
+                <div className="flex items-center space-x-3">
+                  <div className="bg-purple-100 p-2 rounded-lg">
+                    <Bot className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Autonomous Bot Fleet Performance</h3>
+                    <p className="text-sm text-gray-600">Last 7 days • Fleet operational metrics</p>
+                  </div>
                 </div>
-                <button className="text-blue-600 hover:text-blue-700">
+                <button className="text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors">
                   <Download className="h-4 w-4" />
                 </button>
               </div>
             </div>
             <div className="p-6">
-              <div className="space-y-4">
-                {/*
-                  Mock data for bot performance
-                */}
+              <div className="space-y-4 mb-6">
                 {['AGOS-001', 'AGOS-002', 'AGOS-003'].map((id, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">{id}</p>
-                      <p className="text-sm text-gray-600">{['Pasig River', 'Marikina River', 'Taguig Area'][i]}</p>
+                  <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${['bg-green-100', 'bg-yellow-100', 'bg-red-100'][i]
+                        }`}>
+                        <Bot className={`h-5 w-5 ${['text-green-600', 'text-yellow-600', 'text-red-600'][i]
+                          }`} />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">{id}</p>
+                        <p className="text-sm text-gray-600">{['Pasig River Zone A', 'Marikina River Zone B', 'Taguig River Zone C'][i]}</p>
+                      </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">{['45.2 kg', '38.7 kg', '0 kg'][i]}</p>
-                      <p className="text-sm text-gray-600">{['94%', '87%', '0%'][i]} uptime</p>
+                      <p className="font-semibold text-gray-900">{['45.2 kg', '38.7 kg', '0 kg'][i]}</p>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600">{['94%', '87%', '0%'][i]} operational</span>
+                        <span className={`px-2 py-1 text-xs rounded-full font-medium ${['bg-green-100 text-green-700', 'bg-yellow-100 text-yellow-700', 'bg-red-100 text-red-700'][i]
+                          }`}>
+                          {['Active', 'Active', 'Maintenance'][i]}
+                        </span>
+                      </div>
                     </div>
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      ['bg-green-100 text-green-700', 'bg-yellow-100 text-yellow-700', 'bg-red-100 text-red-700'][i]
-                    }`}>
-                      {['Active', 'Active', 'Maintenance'][i]}
-                    </span>
                   </div>
                 ))}
               </div>
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-800"><strong>Efficiency:</strong> 94.5% overall performance vs 92% target</p>
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center space-x-2">
+                  <Gauge className="h-5 w-5 text-blue-600" />
+                  <p className="text-sm text-blue-800">
+                    <strong>Fleet Efficiency:</strong> 94.5% autonomous operation vs 92% target
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Report 5: Hotspot Mapping */}
-          <div className="bg-white rounded-xl shadow-sm border">
+          {/* Report 5: Improved Hotspot Mapping */}
+          <div className="bg-white rounded-xl shadow-sm border lg:col-span-2">
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Hotspot Mapping & Recurring Dump Sites</h3>
-                  <p className="text-sm text-gray-600">High-density trash areas • Last 30 days</p>
+                <div className="flex items-center space-x-3">
+                  <div className="bg-red-100 p-2 rounded-lg">
+                    <MapPin className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Pollution Hotspot Detection & Mapping</h3>
+                    <p className="text-sm text-gray-600">AI-identified high-density areas • Last 30 days</p>
+                  </div>
                 </div>
-                <button className="text-blue-600 hover:text-blue-700">
+                <button className="text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors">
                   <Download className="h-4 w-4" />
                 </button>
               </div>
             </div>
             <div className="p-6">
               {/* Mock Map */}
-              <div className="h-48 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
+              <div className="h-48 bg-gradient-to-br from-red-50 to-orange-50 rounded-lg flex items-center justify-center mb-6 border border-red-100">
                 <div className="text-center">
-                  <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">Interactive hotspot map</p>
+                  <MapPin className="h-12 w-12 text-red-400 mx-auto mb-3" />
+                  <p className="text-sm text-red-600 font-medium">AI-Powered Hotspot Detection Map</p>
+                  <p className="text-xs text-red-500">Automated pollution density analysis</p>
                 </div>
               </div>
-              <div className="space-y-3">
-                <h4 className="font-medium text-gray-900">Top 5 Hotspots</h4>
-                {['Pasig Bridge Area', 'Marikina Junction', 'Taguig Riverside', 'Calapan Bend', 'Makati District'].map((location, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                      <span className="text-sm font-medium">{location}</span>
-                    </div>
-                    <span className="text-sm text-red-700">{[23, 18, 15, 12, 9][i]} incidents</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
 
-          {/* Report 6: Community Performance */}
-          <div className="bg-white rounded-xl shadow-sm border">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Community/Barangay Performance</h3>
-                  <p className="text-sm text-gray-600">Comparison by area • Current month</p>
-                </div>
-                <button className="text-blue-600 hover:text-blue-700">
-                  <Download className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-            <div className="p-6">
               <div className="space-y-4">
-                {[
-                  { area: 'Pasig River Zone', volume: '45.2 kg', trend: 'down', performance: 'Excellent' },
-                  { area: 'Marikina River Zone', volume: '52.8 kg', trend: 'up', performance: 'Good' },
-                  { area: 'Taguig Area', volume: '67.1 kg', trend: 'up', performance: 'Needs Attention' },
-                  { area: 'Calapan River', volume: '38.9 kg', trend: 'down', performance: 'Good' }
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">{item.area}</p>
-                      <p className="text-sm text-gray-600">{item.volume} collected this month</p>
-                    </div>
-                    <div className="text-right">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        item.performance === 'Excellent' ? 'bg-green-100 text-green-700' :
-                        item.performance === 'Good' ? 'bg-blue-100 text-blue-700' :
-                        'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {item.performance}
-                      </span>
-                      <p className={`text-sm mt-1 ${item.trend === 'down' ? 'text-green-600' : 'text-red-600'}`}>
-                        {item.trend === 'down' ? '↓ Improving' : '↑ Increasing'}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-semibold text-gray-900 flex items-center">
+                    <Target className="h-4 w-4 mr-2 text-red-600" />
+                    Top 5 Critical Pollution Zones
+                  </h4>
+                  <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">AI Detected</span>
+                </div>
 
-          {/* Report 7: Recyclable Ratio */}
-          <div className="bg-white rounded-xl shadow-sm border">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Recyclable vs Non-recyclable Waste Ratio</h3>
-                  <p className="text-sm text-gray-600">Sustainability analysis • Last 30 days</p>
-                </div>
-                <button className="text-blue-600 hover:text-blue-700">
-                  <Download className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-2 gap-6 mb-4">
-                <div className="text-center">
-                  <div className="relative h-24 w-24 mx-auto mb-2">
-                    <div className="absolute inset-0 rounded-full bg-green-500" style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }}></div>
-                  </div>
-                  <p className="text-2xl font-bold text-green-600">68%</p>
-                  <p className="text-sm text-gray-600">Recyclable</p>
-                </div>
-                <div className="text-center">
-                  <div className="relative h-24 w-24 mx-auto mb-2">
-                    <div className="absolute inset-0 rounded-full bg-red-500" style={{ clipPath: 'polygon(50% 0%, 0% 50%, 50% 100%, 100% 50%)' }}></div>
-                  </div>
-                  <p className="text-2xl font-bold text-red-600">32%</p>
-                  <p className="text-sm text-gray-600">Non-recyclable</p>
-                </div>
-              </div>
-              <div className="bg-green-50 p-4 rounded-lg">
-                <p className="text-sm text-green-800">
-                  <strong>Opportunity:</strong> 68% recycling potential identified. Partner with local recycling facilities to maximize value recovery.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Report 8: Incident Logs */}
-          <div className="bg-white rounded-xl shadow-sm border">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Incident & Anomaly Logs</h3>
-                  <p className="text-sm text-gray-600">Last 7 days • 8 incidents reported</p>
-                </div>
-                <button className="text-blue-600 hover:text-blue-700">
-                  <Download className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="space-y-3">
                 {[
-                  { type: 'Illegal Dumping', location: 'Pasig Bridge', time: '2 hours ago', severity: 'high' },
-                  { type: 'Bot Malfunction', location: 'AGOS-003', time: '1 day ago', severity: 'medium' },
-                  { type: 'Water Quality Alert', location: 'Zone 3', time: '2 days ago', severity: 'high' },
-                  { type: 'Equipment Maintenance', location: 'AGOS-001', time: '3 days ago', severity: 'low' }
-                ].map((incident, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <AlertTriangle className={`h-4 w-4 ${
-                        incident.severity === 'high' ? 'text-red-500' :
-                        incident.severity === 'medium' ? 'text-yellow-500' : 'text-blue-500'
-                      }`} />
-                      <div>
-                        <p className="font-medium text-gray-900">{incident.type}</p>
-                        <p className="text-sm text-gray-600">{incident.location}</p>
+                  { 
+                    name: 'Pasig Bridge Area', 
+                    reason: 'High debris accumulation from water currents', 
+                    density: 'Very High'
+                  },
+                  { 
+                    name: 'Marikina Junction', 
+                    reason: 'Convergence point of multiple water streams', 
+                    density: 'High'
+                  },
+                  { 
+                    name: 'Taguig Riverside', 
+                    reason: 'Slow water flow causing debris settling', 
+                    density: 'High'
+                  },
+                  { 
+                    name: 'Calapan Bend', 
+                    reason: 'Natural debris trap due to river curvature', 
+                    density: 'Medium'
+                  },
+                  { 
+                    name: 'Makati Confluence', 
+                    reason: 'Multiple drainage outlets concentration', 
+                    density: 'Medium'
+                  }
+                ].map((location, i) => (
+                  <div key={i} className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-100 rounded-lg p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h5 className="font-semibold text-gray-900">{location.name}</h5>
+                          <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                            location.density === 'Very High' ? 'bg-red-100 text-red-700' :
+                            location.density === 'High' ? 'bg-orange-100 text-orange-700' :
+                            'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {location.density} Density
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600">{location.reason}</p>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-500">{incident.time}</p>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        incident.severity === 'high' ? 'bg-red-100 text-red-700' :
-                        incident.severity === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-blue-100 text-blue-700'
-                      }`}>
-                        {incident.severity}
-                      </span>
+                      <div className="text-right">
+                        <div className="flex items-center space-x-1">
+                          <div className={`w-2 h-2 rounded-full ${
+                            location.density === 'Very High' ? 'bg-red-500' :
+                            location.density === 'High' ? 'bg-orange-500' :
+                            'bg-yellow-500'
+                          }`}></div>
+                          <span className="text-xs text-gray-500">#{i + 1}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -514,7 +461,7 @@ export default function AdminReports() {
             <div className="bg-blue-600 px-6 py-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-white">Generate Report</h3>
-                <button 
+                <button
                   onClick={() => setShowGenerateModal(false)}
                   className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1 transition-colors"
                 >
@@ -522,7 +469,7 @@ export default function AdminReports() {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-6 overflow-y-auto max-h-[calc(85vh-140px)]">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left Column - Configuration */}
@@ -532,7 +479,7 @@ export default function AdminReports() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Report Type
                     </label>
-                    <select 
+                    <select
                       value={selectedReportType}
                       onChange={(e) => handleReportTypeChange(e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -542,11 +489,10 @@ export default function AdminReports() {
                       ))}
                     </select>
                     {selectedReportData && (
-                      <span className={`inline-block mt-1 px-2 py-1 text-xs rounded-full ${
-                        selectedReportData.category === 'environmental' ? 'bg-green-100 text-green-700' :
-                        selectedReportData.category === 'operational' ? 'bg-blue-100 text-blue-700' :
-                        'bg-purple-100 text-purple-700'
-                      }`}>
+                      <span className={`inline-block mt-1 px-2 py-1 text-xs rounded-full ${selectedReportData.category === 'environmental' ? 'bg-green-100 text-green-700' :
+                          selectedReportData.category === 'operational' ? 'bg-blue-100 text-blue-700' :
+                            'bg-purple-100 text-purple-700'
+                        }`}>
                         {selectedReportData.category}
                       </span>
                     )}
@@ -562,11 +508,10 @@ export default function AdminReports() {
                         <button
                           key={period}
                           onClick={() => setTimeline(period)}
-                          className={`px-2 py-2 text-xs rounded-lg border transition-all ${
-                            timeline === period 
-                              ? 'bg-blue-600 text-white border-blue-600' 
+                          className={`px-2 py-2 text-xs rounded-lg border transition-all ${timeline === period
+                              ? 'bg-blue-600 text-white border-blue-600'
                               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                          }`}
+                            }`}
                         >
                           {period === 'custom' ? 'Custom' : period.charAt(0).toUpperCase() + period.slice(1)}
                         </button>
@@ -605,15 +550,14 @@ export default function AdminReports() {
                         <button
                           key={mode}
                           onClick={() => setComparisonMode(mode)}
-                          className={`px-2 py-2 text-xs rounded-lg border transition-all ${
-                            comparisonMode === mode
+                          className={`px-2 py-2 text-xs rounded-lg border transition-all ${comparisonMode === mode
                               ? 'bg-green-600 text-white border-green-600'
                               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                          }`}
+                            }`}
                         >
                           {mode === 'none' ? 'None' :
-                           mode === 'areas' ? 'Areas' :
-                           mode === 'timelines' ? 'Periods' : 'Bots'}
+                            mode === 'areas' ? 'Areas' :
+                              mode === 'timelines' ? 'Periods' : 'Bots'}
                         </button>
                       ))}
                     </div>
@@ -656,7 +600,7 @@ export default function AdminReports() {
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        {id: 'pdf', label: 'PDF', icon: FileText },
+                        { id: 'pdf', label: 'PDF', icon: FileText },
                         { id: 'excel', label: 'Excel', icon: BarChart3 },
                         { id: 'csv', label: 'CSV', icon: Download }
                       ].map((format) => (
@@ -683,7 +627,7 @@ export default function AdminReports() {
                     <Eye className="h-4 w-4 mr-2 text-blue-600" />
                     Preview
                   </h4>
-                  
+
                   <div className="space-y-3">
                     <div className="bg-white rounded-lg p-3 border">
                       <div className="flex items-start space-x-2">
@@ -691,10 +635,10 @@ export default function AdminReports() {
                         <div className="flex-1">
                           <h5 className="font-medium text-gray-900 text-sm">{selectedReportData?.name}</h5>
                           <p className="text-xs text-gray-600 mt-1">
-                            {timeline === 'custom' ? 
-                              (customDateRange.start && customDateRange.end ? 
-                                `${customDateRange.start} to ${customDateRange.end}` : 
-                                'Custom period') : 
+                            {timeline === 'custom' ?
+                              (customDateRange.start && customDateRange.end ?
+                                `${customDateRange.start} to ${customDateRange.end}` :
+                                'Custom period') :
                               `This ${timeline}`}
                           </p>
                         </div>
@@ -706,8 +650,8 @@ export default function AdminReports() {
                         <p className="text-xs font-medium text-green-800 flex items-center">
                           <TrendingUp className="h-3 w-3 mr-1" />
                           {comparisonMode === 'areas' ? `Comparing ${selectedAreas.length} areas` :
-                           comparisonMode === 'timelines' ? 'Period comparison' :
-                           'Bot comparison'}
+                            comparisonMode === 'timelines' ? 'Period comparison' :
+                              'Bot comparison'}
                         </p>
                       </div>
                     )}
@@ -747,11 +691,10 @@ export default function AdminReports() {
                 <button
                   onClick={handleGenerateReport}
                   disabled={reportConfig.requiresAreas && selectedAreas.length === 0}
-                  className={`px-6 py-2 rounded-lg text-sm font-medium flex items-center ${
-                    (reportConfig.requiresAreas && selectedAreas.length === 0)
+                  className={`px-6 py-2 rounded-lg text-sm font-medium flex items-center ${(reportConfig.requiresAreas && selectedAreas.length === 0)
                       ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                       : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
+                    }`}
                 >
                   <Play className="h-3 w-3 mr-1" />
                   Generate
@@ -764,3 +707,4 @@ export default function AdminReports() {
     </div>
   );
 }
+                 
