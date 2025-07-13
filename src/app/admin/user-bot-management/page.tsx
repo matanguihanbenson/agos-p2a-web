@@ -1,434 +1,879 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   Bot, 
   Plus,
   Search,
-  Filter,
-  Edit,
-  Trash2,
-  MapPin,
-  Battery,
-  Wifi,
   AlertCircle,
   CheckCircle,
   Clock,
-  Settings
+  Settings,
+  MoreVertical,
+  Activity,
+  User,
+  Cpu,
+  Mail,
+  Building,
+  Award,
+  Zap,
+  Shield,
+  Edit,
+  X,
+  UserCheck
 } from 'lucide-react';
+import { collection, query, where, onSnapshot, Timestamp, addDoc, updateDoc, doc, getDocs } from 'firebase/firestore';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth, db } from '@/lib/firebase';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// Type definitions for Firestore data
+interface User {
+  id: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  organization: string;
+  ecoPoints: number;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  created_by_admin: string;
+}
+
+interface BotData {
+  id: string;
+  bot_id: string;
+  name: string;
+  organization: string;
+  assigned_to?: string;
+  assigned_at?: Timestamp;
+  owner_admin_id: string;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  notes: string;
+}
+
+interface BotRegistry {
+  id: string;
+  bot_id: string;
+  is_registered: boolean;
+  created_at: Timestamp;
+}
 
 export default function UserBotManagement() {
-  const [activeTab, setActiveTab] = useState('users');
+  const [activeView, setActiveView] = useState('users');
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [users, setUsers] = useState<User[]>([]);
+  const [bots, setBots] = useState<BotData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showManageModal, setShowManageModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<User | BotData | null>(null);
+  const [currentUser] = useAuthState(auth);
+  
+  // Bot registration states
+  const [botRegistrationStep, setBotRegistrationStep] = useState(1);
+  const [validatedBotId, setValidatedBotId] = useState('');
+  const [botValidationStatus, setBotValidationStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid' | 'registered'>('idle');
 
-  // Mock data for users
-  const users = [
-    {
-      id: 1,
-      name: 'Maria Santos',
-      email: 'maria.santos@agos.com',
-      role: 'Field Operator',
-      status: 'Active',
-      assignedBots: ['AGOS-001', 'AGOS-002'],
-      lastActive: '2 hours ago',
-      location: 'Pasig River - Zone A'
-    },
-    {
-      id: 2,
-      name: 'Juan dela Cruz',
-      email: 'juan.delacruz@agos.com',
-      role: 'Field Operator',
-      status: 'Active',
-      assignedBots: ['AGOS-003'],
-      lastActive: '30 minutes ago',
-      location: 'Marikina River - Zone B'
-    },
-    {
-      id: 3,
-      name: 'Ana Reyes',
-      email: 'ana.reyes@agos.com',
-      role: 'Field Operator',
-      status: 'Offline',
-      assignedBots: ['AGOS-004'],
-      lastActive: '1 day ago',
-      location: 'Taguig Channel - Zone C'
-    },
-    {
-      id: 4,
-      name: 'Carlos Rodriguez',
-      email: 'carlos.rodriguez@agos.com',
-      role: 'Supervisor',
-      status: 'Active',
-      assignedBots: [],
-      lastActive: '1 hour ago',
-      location: 'Main Station'
-    }
-  ];
+  // Fetch users created by current admin
+  useEffect(() => {
+    if (!currentUser) return;
 
-  // Mock data for bots
-  const bots = [
-    {
-      id: 'AGOS-001',
-      name: 'River Cleaner Alpha',
-      status: 'Active',
-      operator: 'Maria Santos',
-      location: 'Pasig River - Zone A',
-      battery: 87,
-      signal: 'Strong',
-      lastMaintenance: '2024-01-10',
-      totalCollected: 1247,
-      operationTime: '156 hours'
-    },
-    {
-      id: 'AGOS-002',
-      name: 'Aqua Guardian Beta',
-      status: 'Active',
-      operator: 'Maria Santos',
-      location: 'Pasig River - Zone A',
-      battery: 92,
-      signal: 'Strong',
-      lastMaintenance: '2024-01-08',
-      totalCollected: 892,
-      operationTime: '134 hours'
-    },
-    {
-      id: 'AGOS-003',
-      name: 'Water Sentinel Gamma',
-      status: 'Charging',
-      operator: 'Juan dela Cruz',
-      location: 'Charging Station 1',
-      battery: 45,
-      signal: 'Good',
-      lastMaintenance: '2024-01-12',
-      totalCollected: 634,
-      operationTime: '98 hours'
-    },
-    {
-      id: 'AGOS-004',
-      name: 'Eco Defender Delta',
-      status: 'Maintenance',
-      operator: 'Ana Reyes',
-      location: 'Workshop',
-      battery: 23,
-      signal: 'Offline',
-      lastMaintenance: '2024-01-15',
-      totalCollected: 1456,
-      operationTime: '187 hours'
+    const fetchUsers = async () => {
+      try {
+        const usersQuery = query(
+          collection(db, 'users'),
+          where('created_by_admin', '==', currentUser.uid)
+        );
+        
+        const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
+          const usersData: User[] = [];
+          snapshot.forEach((doc) => {
+            usersData.push({ id: doc.id, ...doc.data() } as User);
+          });
+          setUsers(usersData);
+        });
+
+        return unsubscribe;
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+
+    fetchUsers();
+  }, [currentUser]);
+
+  // Fetch bots owned by current admin
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const fetchBots = async () => {
+      try {
+        const botsQuery = query(
+          collection(db, 'bots'),
+          where('owner_admin_id', '==', currentUser.uid)
+        );
+        
+        const unsubscribe = onSnapshot(botsQuery, (snapshot) => {
+          const botsData: BotData[] = [];
+          snapshot.forEach((doc) => {
+            botsData.push({ id: doc.id, ...doc.data() } as BotData);
+          });
+          setBots(botsData);
+          setLoading(false);
+        });
+
+        return unsubscribe;
+      } catch (error) {
+        console.error('Error fetching bots:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchBots();
+  }, [currentUser]);
+
+  // Helper function to get user status
+  const getUserStatus = (user: User) => {
+    return user.isActive ? 'Active' : 'Offline';
+  };
+
+  // Helper function to get bot status (simulate based on data)
+  const getBotStatus = (bot: BotData) => {
+    if (bot.assigned_to) {
+      return 'Active';
     }
-  ];
+    return 'Available';
+  };
+
+  // Helper function to get user's assigned bots
+  const getUserAssignedBots = (userId: string) => {
+    return bots.filter(bot => bot.assigned_to === userId);
+  };
+
+  // Helper function to find assigned user for bot
+  const getBotAssignedUser = (bot: BotData) => {
+    if (!bot.assigned_to) return 'Unassigned';
+    const user = users.find(u => u.id === bot.assigned_to);
+    return user ? `${user.firstname} ${user.lastname}` : 'Unknown User';
+  };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'offline': return 'bg-red-100 text-red-800';
-      case 'charging': return 'bg-yellow-100 text-yellow-800';
-      case 'maintenance': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active': return 'text-green-600 bg-green-50';
+      case 'offline': return 'text-red-600 bg-red-50';
+      case 'available': return 'text-blue-600 bg-blue-50';
+      default: return 'text-gray-600 bg-gray-50';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'active': return <CheckCircle className="h-4 w-4" />;
-      case 'offline': return <AlertCircle className="h-4 w-4" />;
-      case 'charging': return <Battery className="h-4 w-4" />;
-      case 'maintenance': return <Settings className="h-4 w-4" />;
-      default: return <Clock className="h-4 w-4" />;
+      case 'active': return <CheckCircle className="h-3 w-3" />;
+      case 'offline': return <AlertCircle className="h-3 w-3" />;
+      case 'available': return <Clock className="h-3 w-3" />;
+      default: return <Clock className="h-3 w-3" />;
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-blue-200/50 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
-        <div className="mx-8 flex h-16 items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent">User & Bot Management</h1>
-            <p className="text-slate-600 mt-1">Manage field operators and bot assignments</p>
-          </div>
-          
-          <Button onClick={() => console.log('Add', activeTab)} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Add {activeTab === 'users' ? 'User' : 'Bot'}
-          </Button>
-        </div>
-      </header>
+  // Validate bot ID against registry
+  const validateBotId = async (botId: string) => {
+    setBotValidationStatus('checking');
+    
+    try {
+      const registryQuery = query(
+        collection(db, 'bot_registry'),
+        where('bot_id', '==', botId)
+      );
+      
+      const registrySnapshot = await getDocs(registryQuery);
+      
+      if (registrySnapshot.empty) {
+        setBotValidationStatus('invalid');
+        return;
+      }
+      
+      const botRegistry = registrySnapshot.docs[0].data() as BotRegistry;
+      
+      if (botRegistry.is_registered) {
+        setBotValidationStatus('registered');
+        return;
+      }
+      
+      setBotValidationStatus('valid');
+      setValidatedBotId(botId);
+    } catch (error) {
+      console.error('Error validating bot ID:', error);
+      setBotValidationStatus('invalid');
+    }
+  };
 
-      <div className="mx-8 my-8 space-y-8">
-        {/* Tabs */}
-        <Card className="shadow-lg bg-white/80 backdrop-blur border-blue-200">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="users" className="flex items-center space-x-2">
-                <Users className="h-4 w-4" />
-                <span>Field Operators ({users.length})</span>
-              </TabsTrigger>
-              <TabsTrigger value="bots" className="flex items-center space-x-2">
-                <Bot className="h-4 w-4" />
-                <span>AGOS Bots ({bots.length})</span>
-              </TabsTrigger>
-            </TabsList>
+  // Add new operator (auto-set role to field_operator)
+  const handleAddOperator = async (operatorData: Partial<User>) => {
+    if (!currentUser) return;
+    
+    try {
+      await addDoc(collection(db, 'users'), {
+        ...operatorData,
+        role: 'field_operator', // Auto-set role
+        created_by_admin: currentUser.uid,
+        created_at: new Date(),
+        updated_at: new Date(),
+        isActive: true,
+        ecoPoints: 0,
+        badges: []
+      });
+      setShowAddModal(false);
+    } catch (error) {
+      console.error('Error adding operator:', error);
+    }
+  };
 
-            {/* Search and Filter */}
-            <CardHeader className="border-b border-slate-200">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
-                    <input
-                      type="text"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder={`Search ${activeTab}...`}
-                      className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <select className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    <option value="all">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="offline">Offline</option>
-                    {activeTab === 'bots' && (
-                      <>
-                        <option value="charging">Charging</option>
-                        <option value="maintenance">Maintenance</option>
-                      </>
-                    )}
-                  </select>
-                  <Button variant="outline" size="icon">
-                    <Filter className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
+  // Add new bot with registry validation
+  const handleAddBot = async (botData: Partial<BotData>) => {
+    if (!currentUser || !validatedBotId) return;
+    
+    try {
+      // Add bot to bots collection
+      await addDoc(collection(db, 'bots'), {
+        ...botData,
+        bot_id: validatedBotId,
+        owner_admin_id: currentUser.uid,
+        created_at: new Date(),
+        updated_at: new Date(),
+        notes: botData.notes || ''
+      });
 
-            <TabsContent value="users" className="p-6">
-              <div className="space-y-4">
-                {users.map((user) => (
-                  <Card key={user.id} className="hover:shadow-md transition-shadow bg-gradient-to-r from-white to-slate-50">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center">
-                            <Users className="h-6 w-6 text-blue-600" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-slate-800">{user.name}</h3>
-                            <p className="text-sm text-slate-600">{user.email}</p>
-                            <div className="flex items-center space-x-4 mt-1">
-                              <span className="text-xs text-slate-500">{user.role}</span>
-                              <span className="text-xs text-slate-500">• {user.lastActive}</span>
-                              <span className="text-xs text-slate-500">• {user.location}</span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center space-x-4">
-                          <div className="text-right">
-                            <Badge className={getStatusColor(user.status)}>
-                              {getStatusIcon(user.status)}
-                              <span className="ml-1">{user.status}</span>
-                            </Badge>
-                            <div className="text-xs text-slate-500 mt-1">
-                              {user.assignedBots.length} bot{user.assignedBots.length !== 1 ? 's' : ''} assigned
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center space-x-2">
-                            <Button variant="ghost" size="icon" className="hover:bg-blue-100">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="hover:bg-red-100">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {user.assignedBots.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-slate-100">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-xs text-slate-600">Assigned Bots:</span>
-                            {user.assignedBots.map((botId) => (
-                              <Badge key={botId} variant="secondary" className="bg-blue-100 text-blue-800">
-                                {botId}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
+      // Update registry to mark as registered
+      const registryQuery = query(
+        collection(db, 'bot_registry'),
+        where('bot_id', '==', validatedBotId)
+      );
+      const registrySnapshot = await getDocs(registryQuery);
+      
+      if (!registrySnapshot.empty) {
+        const registryDoc = registrySnapshot.docs[0];
+        await updateDoc(doc(db, 'bot_registry', registryDoc.id), {
+          is_registered: true,
+          registered_at: new Date()
+        });
+      }
 
-            <TabsContent value="bots" className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {bots.map((bot) => (
-                  <Card key={bot.id} className="hover:shadow-lg transition-shadow bg-gradient-to-br from-white to-slate-50">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center">
-                            <Bot className="h-6 w-6 text-blue-600" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-slate-800">{bot.id}</CardTitle>
-                            <CardDescription>{bot.name}</CardDescription>
-                          </div>
-                        </div>
-                        
-                        <Badge className={getStatusColor(bot.status)}>
-                          {getStatusIcon(bot.status)}
-                          <span className="ml-1">{bot.status}</span>
-                        </Badge>
-                      </div>
-                    </CardHeader>
+      // Reset states
+      setShowAddModal(false);
+      setBotRegistrationStep(1);
+      setValidatedBotId('');
+      setBotValidationStatus('idle');
+    } catch (error) {
+      console.error('Error adding bot:', error);
+    }
+  };
 
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600">Operator</span>
-                        <span className="font-medium text-slate-900">{bot.operator}</span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600">Location</span>
-                        <span className="font-medium text-slate-900 text-right">{bot.location}</span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600">Battery</span>
-                        <div className="flex items-center space-x-2">
-                          <Battery className="h-4 w-4 text-slate-400" />
-                          <span className={`font-medium ${
-                            bot.battery > 60 ? 'text-green-600' :
-                            bot.battery > 30 ? 'text-yellow-600' : 'text-red-600'
-                          }`}>
-                            {bot.battery}%
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600">Signal</span>
-                        <div className="flex items-center space-x-2">
-                          <Wifi className="h-4 w-4 text-slate-400" />
-                          <span className="font-medium text-slate-900">{bot.signal}</span>
-                        </div>
-                      </div>
+  // Update item
+  const handleUpdateItem = async (updates: Partial<User | BotData>) => {
+    if (!selectedItem) return;
+    
+    try {
+      await updateDoc(doc(db, activeView === 'users' ? 'users' : 'bots', selectedItem.id), {
+        ...updates,
+        updated_at: new Date()
+      });
+      setShowManageModal(false);
+      setSelectedItem(null);
+    } catch (error) {
+      console.error('Error updating item:', error);
+    }
+  };
 
-                      <div className="pt-3 border-t border-slate-100">
-                        <div className="grid grid-cols-2 gap-4 text-center">
-                          <div>
-                            <div className="text-lg font-bold text-slate-900">{bot.totalCollected}</div>
-                            <div className="text-xs text-slate-600">Items Collected</div>
-                          </div>
-                          <div>
-                            <div className="text-lg font-bold text-slate-900">{bot.operationTime}</div>
-                            <div className="text-xs text-slate-600">Operation Time</div>
-                          </div>
-                        </div>
-                      </div>
+  // Assign bot to operator
+  const handleAssignBot = async (botId: string, operatorId: string | null) => {
+    try {
+      await updateDoc(doc(db, 'bots', botId), {
+        assigned_to: operatorId,
+        assigned_at: operatorId ? new Date() : null,
+        updated_at: new Date()
+      });
+      setShowManageModal(false);
+      setSelectedItem(null);
+    } catch (error) {
+      console.error('Error assigning bot:', error);
+    }
+  };
 
-                      <div className="flex items-center space-x-2">
-                        <Button className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
-                          Manage
-                        </Button>
-                        <Button variant="outline" size="icon">
-                          <MapPin className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="icon">
-                          <Settings className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </Card>
+  // Get role icon
+  const getRoleIcon = (role: string) => {
+    switch (role.toLowerCase()) {
+      case 'field_operator': return <User className="h-4 w-4 text-blue-600" />;
+      case 'supervisor': return <Shield className="h-4 w-4 text-blue-600" />;
+      case 'admin': return <Settings className="h-4 w-4 text-blue-600" />;
+      default: return <User className="h-4 w-4 text-blue-600" />;
+    }
+  };
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-blue-700">Total Operators</p>
-                  <p className="text-3xl font-bold text-blue-900">{users.length}</p>
-                  <p className="text-sm text-blue-600">
-                    {users.filter(u => u.status === 'Active').length} active
-                  </p>
-                </div>
-                <div className="bg-blue-600 p-3 rounded-lg">
-                  <Users className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+  // Get bot type icon
+  const getBotTypeIcon = () => {
+    return <Cpu className="h-4 w-4 text-green-600" />;
+  };
 
-          <Card className="shadow-lg bg-gradient-to-br from-green-50 to-emerald-100 border-green-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-green-700">Active Bots</p>
-                  <p className="text-3xl font-bold text-green-900">
-                    {bots.filter(b => b.status === 'Active').length}
-                  </p>
-                  <p className="text-sm text-green-600">
-                    {bots.length} total bots
-                  </p>
-                </div>
-                <div className="bg-green-600 p-3 rounded-lg">
-                  <Bot className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+  const filteredUsers = users.filter(user => {
+    const fullName = `${user.firstname} ${user.lastname}`.toLowerCase();
+    const matchesSearch = fullName.includes(searchTerm.toLowerCase()) || 
+                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const userStatus = getUserStatus(user);
+    const matchesStatus = statusFilter === 'all' || userStatus.toLowerCase() === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
-          <Card className="shadow-lg bg-gradient-to-br from-yellow-50 to-amber-100 border-yellow-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-yellow-700">Avg Battery</p>
-                  <p className="text-3xl font-bold text-yellow-900">
-                    {Math.round(bots.reduce((acc, bot) => acc + bot.battery, 0) / bots.length)}%
-                  </p>
-                  <p className="text-sm text-yellow-600">Above threshold</p>
-                </div>
-                <div className="bg-yellow-600 p-3 rounded-lg">
-                  <Battery className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+  const filteredBots = bots.filter(bot => {
+    const matchesSearch = bot.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         bot.bot_id.toLowerCase().includes(searchTerm.toLowerCase());
+    const botStatus = getBotStatus(bot);
+    const matchesStatus = statusFilter === 'all' || botStatus.toLowerCase() === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
-          <Card className="shadow-lg bg-gradient-to-br from-purple-50 to-violet-100 border-purple-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-purple-700">Coverage Areas</p>
-                  <p className="text-3xl font-bold text-purple-900">8</p>
-                  <p className="text-sm text-purple-600">All monitored</p>
-                </div>
-                <div className="bg-purple-600 p-3 rounded-lg">
-                  <MapPin className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+  const activeUsers = users.filter(u => u.isActive).length;
+  const activeBots = bots.filter(b => getBotStatus(b) === 'Active').length;
+  const totalUsers = users.length;
+  const totalBots = bots.length;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50/30 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading management data...</p>
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50/30">
+      {/* Modern Header */}
+      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Team & Fleet Management</h1>
+              <p className="text-gray-600 text-sm">Manage field operators and autonomous systems</p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setShowAddModal(true)}
+                className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-xl text-sm font-medium hover:bg-blue-600 transition-all duration-200 shadow-lg shadow-blue-500/25"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add {activeView === 'users' ? 'Operator' : 'Bot'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Overview Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-100 p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Active Operators</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{activeUsers}</p>
+                <p className="text-xs text-gray-500 mt-1">{totalUsers} total</p>
+              </div>
+              <div className="bg-blue-500 p-3 rounded-xl">
+                <Users className="h-5 w-5 text-white" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-100 p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Active Bots</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{activeBots}</p>
+                <p className="text-xs text-gray-500 mt-1">{totalBots} deployed</p>
+              </div>
+              <div className="bg-green-500 p-3 rounded-xl">
+                <Bot className="h-5 w-5 text-white" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-100 p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Assignment Rate</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{totalBots > 0 ? Math.round((activeBots / totalBots) * 100) : 0}%</p>
+                <p className="text-xs text-gray-500 mt-1">Bots deployed</p>
+              </div>
+              <div className="bg-purple-500 p-3 rounded-xl">
+                <Activity className="h-5 w-5 text-white" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Tabs */}
+        <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-100 p-6 mb-8 shadow-sm">
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* View Selection */}
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-3">View</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setActiveView('users')}
+                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    activeView === 'users'
+                      ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/25'
+                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  <Users className="h-4 w-4" />
+                  <span className="hidden sm:inline">Operators</span>
+                </button>
+                <button
+                  onClick={() => setActiveView('bots')}
+                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    activeView === 'bots'
+                      ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/25'
+                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  <Bot className="h-4 w-4" />
+                  <span className="hidden sm:inline">Bots</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Search and Filter */}
+            <div className="lg:w-64">
+              <label className="block text-sm font-medium text-gray-700 mb-3">Search</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder={`Search ${activeView}...`}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                />
+              </div>
+            </div>
+
+            <div className="lg:w-48">
+              <label className="block text-sm font-medium text-gray-700 mb-3">Status</label>
+              <select 
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="offline">Offline</option>
+                {activeView === 'bots' && <option value="available">Available</option>}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Content Area */}
+        {activeView === 'users' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredUsers.map((user) => {
+              const assignedBots = getUserAssignedBots(user.id);
+              const userStatus = getUserStatus(user);
+              
+              return (
+                <div key={user.id} className="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200">
+                  <div className="p-6">
+                    {/* Header with icon and status */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center">
+                        {getRoleIcon(user.role)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-gray-900 truncate">{user.firstname} {user.lastname}</h4>
+                          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${getStatusColor(userStatus)}`}>
+                            {getStatusIcon(userStatus)}
+                            {userStatus}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
+                          <Mail className="h-3 w-3" />
+                          <span className="truncate">{user.email}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Info Grid */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="flex items-center gap-2 text-sm">
+                        <User className="h-3 w-3 text-gray-400" />
+                        <span className="text-gray-600 truncate capitalize">{user.role.replace('_', ' ')}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Building className="h-3 w-3 text-gray-400" />
+                        <span className="text-gray-600 truncate">{user.organization || 'N/A'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Bot className="h-3 w-3 text-gray-400" />
+                        <span className="text-gray-600">{assignedBots.length} Bot{assignedBots.length !== 1 ? 's' : ''}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Award className="h-3 w-3 text-gray-400" />
+                        <span className="text-gray-600">{user.ecoPoints} Points</span>
+                      </div>
+                    </div>
+
+                    {/* Assigned Bots - Always show this section for uniform height */}
+                    <div className="mb-4 min-h-[2rem]">
+                      {assignedBots.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {assignedBots.slice(0, 2).map((bot) => (
+                            <span key={bot.id} className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-medium">
+                              <Cpu className="h-3 w-3 mr-1" />
+                              {bot.bot_id}
+                            </span>
+                          ))}
+                          {assignedBots.length > 2 && (
+                            <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs">
+                              +{assignedBots.length - 2} more
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <Bot className="h-3 w-3" />
+                          <span>No bots assigned</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => {
+                          setSelectedItem(user);
+                          setShowManageModal(true);
+                        }}
+                        className="flex-1 bg-blue-500 text-white rounded-xl py-2 px-3 text-sm font-medium hover:bg-blue-600 transition-all duration-200 flex items-center justify-center gap-2"
+                      >
+                        <Edit className="h-3 w-3" />
+                        Manage
+                      </button>
+                      <button className="p-2 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-all duration-200">
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {activeView === 'bots' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredBots.map((bot) => {
+              const botStatus = getBotStatus(bot);
+              const assignedUser = getBotAssignedUser(bot);
+              
+              return (
+                <div key={bot.id} className="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200">
+                  <div className="p-6">
+                    {/* Header with proper hierarchy */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-xl flex items-center justify-center">
+                        {getBotTypeIcon()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-gray-900 truncate">{bot.name}</h4>
+                          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${getStatusColor(botStatus)}`}>
+                            {getStatusIcon(botStatus)}
+                            {botStatus}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
+                          <span className="truncate">{bot.bot_id}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Info Grid */}
+                    <div className="grid grid-cols-1 gap-3 mb-4">
+                      <div className="flex items-center gap-2 text-sm">
+                        <User className="h-3 w-3 text-gray-400" />
+                        <span className="text-gray-600 truncate">{assignedUser}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Building className="h-3 w-3 text-gray-400" />
+                        <span className="text-gray-600 truncate">{bot.organization || 'No organization'}</span>
+                      </div>
+                    </div>
+
+                    {/* Status indicator */}
+                    <div className="mb-4 min-h-[2rem] flex items-center">
+                      <div className="flex items-center gap-2 text-sm">
+                        <div 
+                          className="w-2 h-2 rounded-full" 
+                          style={{ backgroundColor: botStatus === 'Active' ? '#22c55e' : '#3b82f6' }}
+                        ></div>
+                        <span className="text-gray-600">
+                          {bot.assigned_to ? 'Currently assigned' : 'Available for assignment'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => {
+                          setSelectedItem(bot);
+                          setShowManageModal(true);
+                        }}
+                        className="flex-1 bg-blue-500 text-white rounded-xl py-2 px-3 text-sm font-medium hover:bg-blue-600 transition-all duration-200 flex items-center justify-center gap-2"
+                      >
+                        <Edit className="h-3 w-3" />
+                        Manage
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Add Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full border border-gray-100">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Add New {activeView === 'users' ? 'Operator' : 'Bot'}
+                  {activeView === 'bots' && ` - Step ${botRegistrationStep} of 2`}
+                </h3>
+                <button 
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setBotRegistrationStep(1);
+                    setValidatedBotId('');
+                    setBotValidationStatus('idle');
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {activeView === 'users' ? (
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  const data = Object.fromEntries(formData.entries());
+                  handleAddOperator(data);
+                }}>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <input name="firstname" placeholder="First Name" required className="border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                      <input name="lastname" placeholder="Last Name" required className="border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                    </div>
+                    <input name="email" type="email" placeholder="Email" required className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                    <input name="organization" placeholder="Organization (Optional)" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  
+                  <div className="flex gap-3 mt-6">
+                    <button type="submit" className="flex-1 bg-blue-500 text-white rounded-lg py-2 px-4 text-sm font-medium hover:bg-blue-600 transition-colors">
+                      Add Operator
+                    </button>
+                    <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  {botRegistrationStep === 1 ? (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Bot ID</label>
+                        <input 
+                          type="text" 
+                          placeholder="Enter Bot ID (e.g., AGOS-001)" 
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                          onBlur={(e) => {
+                            if (e.target.value.trim()) {
+                              validateBotId(e.target.value.trim());
+                            }
+                          }}
+                        />
+                        
+                        {botValidationStatus === 'checking' && (
+                          <div className="mt-2 flex items-center gap-2 text-blue-600">
+                            <div className="animate-spin rounded-full h-3 w-3 border border-blue-500 border-t-transparent"></div>
+                            <span className="text-xs">Validating bot ID...</span>
+                          </div>
+                        )}
+                        
+                        {botValidationStatus === 'invalid' && (
+                          <div className="mt-2 text-xs text-red-600">
+                            Bot ID not found in registry. Please check the ID and try again.
+                          </div>
+                        )}
+                        
+                        {botValidationStatus === 'registered' && (
+                          <div className="mt-2 text-xs text-orange-600">
+                            This bot is already registered and cannot be added again.
+                          </div>
+                        )}
+                        
+                        {botValidationStatus === 'valid' && (
+                          <div className="mt-2 text-xs text-green-600">
+                            ✓ Bot ID is valid and available for registration.
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        <button 
+                          onClick={() => setBotRegistrationStep(2)}
+                          disabled={botValidationStatus !== 'valid'}
+                          className="flex-1 bg-blue-500 text-white rounded-lg py-2 px-4 text-sm font-medium hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                        >
+                          Next
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => setShowAddModal(false)}
+                          className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.currentTarget);
+                      const data = Object.fromEntries(formData.entries());
+                      handleAddBot(data);
+                    }}>
+                      <div className="space-y-4">
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                          <div className="text-sm text-green-800">
+                            <strong>Bot ID:</strong> {validatedBotId}
+                          </div>
+                        </div>
+                        
+                        <input name="name" placeholder="Bot Name" required className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                        <input name="organization" placeholder="Organization (Optional)" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                        <textarea name="notes" placeholder="Notes (Optional)" rows={3} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none"></textarea>
+                      </div>
+                      
+                      <div className="flex gap-3 mt-6">
+                        <button type="submit" className="flex-1 bg-blue-500 text-white rounded-lg py-2 px-4 text-sm font-medium hover:bg-blue-600 transition-colors">
+                          Register Bot
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => setBotRegistrationStep(1)}
+                          className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                        >
+                          Back
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Modal */}
+      {showManageModal && selectedItem && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full border border-gray-100">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Manage {activeView === 'users' ? (selectedItem as User).firstname + ' ' + (selectedItem as User).lastname : (selectedItem as BotData).name}
+                </h3>
+                <button 
+                  onClick={() => setShowManageModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {activeView === 'users' ? (
+                <>
+                  <button 
+                    onClick={() => handleUpdateItem({ isActive: !(selectedItem as User).isActive })}
+                    className={`w-full py-2 px-4 text-sm font-medium rounded-lg transition-colors ${
+                      (selectedItem as User).isActive 
+                        ? 'bg-orange-500 text-white hover:bg-orange-600' 
+                        : 'bg-green-500 text-white hover:bg-green-600'
+                    }`}
+                  >
+                    {(selectedItem as User).isActive ? 'Deactivate User' : 'Activate User'}
+                  </button>
+                </>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Assign to Operator</label>
+                    <select 
+                      value={(selectedItem as BotData).assigned_to || ''}
+                      onChange={(e) => handleAssignBot(selectedItem.id, e.target.value || null)}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                    >
+                      <option value="">Unassigned</option>
+                      {users.filter(u => u.isActive).map(user => (
+                        <option key={user.id} value={user.id}>
+                          {user.firstname} {user.lastname}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {(selectedItem as BotData).assigned_to && (
+                    <button 
+                      onClick={() => handleAssignBot(selectedItem.id, null)}
+                      className="w-full bg-gray-500 text-white rounded-lg py-2 px-4 text-sm font-medium hover:bg-gray-600 transition-colors"
+                    >
+                      Remove Assignment
+                    </button>
+                  )}
+                </div>
+              )}
+              
+              <button 
+                onClick={() => setShowManageModal(false)}
+                className="w-full border border-gray-200 rounded-lg py-2 px-4 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

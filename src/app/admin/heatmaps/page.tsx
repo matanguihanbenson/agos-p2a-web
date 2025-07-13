@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { 
   Map, 
-  Thermometer,
   Filter,
   RefreshCw,
   Download,
