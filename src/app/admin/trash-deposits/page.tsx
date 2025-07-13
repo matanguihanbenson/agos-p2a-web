@@ -31,7 +31,7 @@ const TrashDepositsMap = dynamic(() => import('@/app/admin/trash-deposits/TrashD
 interface TrashLocation {
   id: string;
   area: string;
-  coordinates: [number, number];
+  coordinates: number[]; // Changed from [number, number] to number[]
   totalItems: number;
   breakdown: {
     plasticBottles: number;

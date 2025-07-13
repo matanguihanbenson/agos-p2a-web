@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 // Fix for default markers in Next.js
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -18,6 +18,7 @@ interface TrashBreakdown {
   plasticBags: number;
   metalCans: number;
   other: number;
+  [key: string]: number; // Add index signature for dynamic access
 }
 
 interface TrashLocation {
@@ -34,12 +35,6 @@ interface TrashDepositsMapProps {
   onLocationSelect: (location: TrashLocation) => void;
   selectedLocation: TrashLocation | null;
   selectedTrashType?: string;
-}
-
-// Remove or replace the any type with proper typing
-interface MapInstance {
-  setView: (center: [number, number], zoom: number) => void;
-  // Add other map methods as needed
 }
 
 const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
@@ -128,7 +123,7 @@ const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
   };
 
   // Get trash type details
-  const getTrashTypeDetails = (type: string, count: number) => {
+  const getTrashTypeDetails = (type: string) => {
     const details: Record<string, {
       name: string;
       icon: string;
@@ -217,15 +212,13 @@ const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
 
     // Add markers for each location and trash type
     locations.forEach(location => {
-      const isSelected = selectedLocation?.id === location.id;
-      
       // Determine which trash types to show
       const trashTypesToShow = selectedTrashType === 'all' 
         ? ['plasticBottles', 'foodContainers', 'plasticBags', 'metalCans', 'other']
         : [selectedTrashType];
 
       trashTypesToShow.forEach((trashType, index) => {
-        const count = (location.breakdown as any)[trashType];
+        const count = location.breakdown[trashType as keyof TrashBreakdown];
         if (count && count > 0) {
           // Offset markers slightly when showing multiple types
           const latOffset = index * 0.001;
@@ -239,7 +232,7 @@ const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
           );
 
           // Get trash type details
-          const trashDetails = getTrashTypeDetails(trashType, count);
+          const trashDetails = getTrashTypeDetails(trashType);
           
           // Create initial popup content (simple version)
           const initialPopupContent = `
