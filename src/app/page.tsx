@@ -29,7 +29,6 @@ import {
   Github,
   Eye,
   Navigation,
-  Calendar,
   FileText,
   AlertTriangle
 } from 'lucide-react';
@@ -509,4 +508,3 @@ export default function Home() {
   );
 }
 
-            

@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { 
   Map, 
   Thermometer,
-  Calendar,
   Filter,
   RefreshCw,
   Download,
@@ -19,7 +18,6 @@ export default function Heatmaps() {
   const [selectedMetric, setSelectedMetric] = useState('trash-density');
   const [selectedTimeframe, setSelectedTimeframe] = useState('week');
   const [isAnimated, setIsAnimated] = useState(false);
-  const [heatmapType, setHeatmapType] = useState('density'); // 'density', 'collection', 'water-quality'
 
   const heatmapData = {
     'trash-density': {
@@ -394,33 +392,6 @@ export default function Heatmaps() {
                     <span className="text-purple-900 font-medium">Configure Thresholds</span>
                   </div>
                 </button>
-              </div>
-            </div>
-
-            {/* System Status */}
-            <div className="bg-white rounded-xl shadow-sm border">
-              <div className="p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">System Status</h3>
-              </div>
-              <div className="p-6 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Data Processing</span>
-                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Active</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Map Services</span>
-                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Online</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Real-time Updates</span>
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    isAnimated 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {isAnimated ? 'Enabled' : 'Paused'}
-                  </span>
-                </div>
               </div>
             </div>
           </div>

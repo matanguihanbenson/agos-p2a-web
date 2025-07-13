@@ -1,5 +1,5 @@
 // User types
-export interface User {
+export interface AppUser {
   id: string;
   name: string;
   email: string;

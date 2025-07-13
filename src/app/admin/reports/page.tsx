@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { 
   FileText, 
   Download, 
-  Calendar, 
   Filter,
   TrendingUp,
   PieChart,
@@ -235,45 +234,6 @@ export default function AdminReports() {
                 </div>
               </div>
             </div>
-
-            {/* Operational Performance */}
-            <div className="bg-white rounded-xl shadow-sm border">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold text-gray-900">Operational Performance</h3>
-                  <button 
-                    onClick={() => exportReport('operational')}
-                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                  >
-                    Export Excel
-                  </button>
-                </div>
-              </div>
-              <div className="p-6">
-                <div className="space-y-4">
-                  {[
-                    { metric: 'Average Operation Time', value: '8.2 hrs/day', trend: '+5%', status: 'good' },
-                    { metric: 'Battery Efficiency', value: '94.5%', trend: '+2.1%', status: 'good' },
-                    { metric: 'Navigation Accuracy', value: '99.2%', trend: '+0.8%', status: 'excellent' },
-                    { metric: 'Maintenance Frequency', value: '1.2 times/month', trend: '-15%', status: 'good' },
-                    { metric: 'Error Rate', value: '0.3%', trend: '-0.2%', status: 'excellent' },
-                  ].map((metric, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm font-medium text-gray-900">{metric.metric}</span>
-                      <div className="text-right">
-                        <span className="text-sm font-semibold text-gray-900">{metric.value}</span>
-                        <span className={`text-xs ml-2 ${
-                          metric.status === 'excellent' ? 'text-green-600' :
-                          metric.status === 'good' ? 'text-blue-600' : 'text-yellow-600'
-                        }`}>
-                          {metric.trend}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Sidebar */}
@@ -340,32 +300,11 @@ export default function AdminReports() {
                 </div>
               </div>
             </div>
-
-            {/* Scheduled Reports */}
-            <div className="bg-white rounded-xl shadow-sm border">
-              <div className="p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Scheduled Reports</h3>
-              </div>
-              <div className="p-6">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-900">Daily Summary</span>
-                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Active</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-900">Weekly Analytics</span>
-                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Active</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-900">Monthly Impact</span>
-                    <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Paused</span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+                

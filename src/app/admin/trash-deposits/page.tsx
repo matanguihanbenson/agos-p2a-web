@@ -10,7 +10,6 @@ import {
   PieChart,
   RefreshCw,
   Download,
-  Calendar,
   Layers,
   Activity,
   Recycle,
@@ -299,20 +298,6 @@ export default function TrashDeposits() {
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                   <div className="flex flex-wrap items-center gap-4">
                     <div className="flex items-center space-x-2">
-                      <Calendar className="h-4 w-4 text-gray-500" />
-                      <select 
-                        value={selectedTimeframe}
-                        onChange={(e) => setSelectedTimeframe(e.target.value)}
-                        className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                      >
-                        <option value="day">Today</option>
-                        <option value="week">This Week</option>
-                        <option value="month">This Month</option>
-                        <option value="quarter">This Quarter</option>
-                      </select>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
                       <MapPin className="h-4 w-4 text-gray-500" />
                       <select 
                         value={selectedArea}
@@ -514,3 +499,4 @@ export default function TrashDeposits() {
     </div>
   );
 }
+                      

@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -36,12 +35,10 @@ import {
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
-  const router = useRouter();
 
   const handleLogout = async () => {
     try {
       await logout();
-      router.push('/auth/login');
     } catch (error) {
       console.error('Logout failed:', error);
     }
@@ -380,32 +377,6 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
-            {/* System Health */}
-            <Card className="shadow-lg bg-white/80 backdrop-blur">
-              <CardHeader className="border-b border-slate-100">
-                <CardTitle className="text-lg text-slate-800">System Health</CardTitle>
-                <CardDescription className="text-slate-600">Infrastructure status monitoring</CardDescription>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm font-medium text-slate-700">Database</span>
-                  <Badge variant="secondary" className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800">Healthy</Badge>
-                </div>
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm font-medium text-slate-700">API Services</span>
-                  <Badge variant="secondary" className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800">Healthy</Badge>
-                </div>
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm font-medium text-slate-700">Network</span>
-                  <Badge variant="outline" className="border-yellow-300 text-yellow-700 bg-yellow-50">Warning</Badge>
-                </div>
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm font-medium text-slate-700">Storage</span>
-                  <Badge variant="secondary" className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800">Healthy</Badge>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Active Alerts */}
             <Card className="border-orange-200 shadow-lg bg-gradient-to-br from-orange-50/50 to-red-50/50 backdrop-blur">
               <CardHeader className="border-b border-orange-100">
@@ -432,4 +403,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
+    
+            

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
-  User,
+  User as FirebaseUser,
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
@@ -18,7 +18,7 @@ interface UserData {
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: FirebaseUser | null;
   userData: UserData | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -42,7 +42,7 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -102,4 +102,3 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
-   
