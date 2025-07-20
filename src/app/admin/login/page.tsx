@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Bot, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import Image from 'next/image';
+import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
@@ -114,8 +115,14 @@ export default function AdminLogin() {
         <div className="bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-6">
           <div className="text-center mb-6">
             <div className="flex justify-center mb-3">
-              <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2.5 rounded-xl shadow-lg">
-                <Bot className="h-6 w-6 text-white" />
+              <div className="">
+                <Image 
+                  src="/img/app_launcher.png" 
+                  alt="AGOS Logo" 
+                  width={64} 
+                  height={64}
+                  className="object-contain"
+                />
               </div>
             </div>
             <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent">Admin Portal</h2>

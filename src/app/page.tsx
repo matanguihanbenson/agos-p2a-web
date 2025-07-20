@@ -1,29 +1,29 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
-  Bot, 
+  ArrowRight, 
+  Play, 
   Users, 
+  Bot,
+  Recycle, 
+  Droplets, 
+  Menu, 
+  X, 
+  Eye, 
+  Navigation, 
+  Calendar, 
   BarChart3, 
-  ArrowRight,
-  Play,
-  Menu,
-  X,
-  LogOut,
   User,
-  Recycle,
-  Activity,
-  Download,
-  Mail,
-  Phone,
-  Github,
-  Eye,
-  Navigation,
-  Calendar,
-  Droplets
+  Activity, 
+  Download, 
+  Mail, 
+  Phone, 
+  LogOut,
+  Github 
 } from 'lucide-react';
 
 export default function Home() {
@@ -78,8 +78,14 @@ export default function Home() {
           <div className="flex justify-between items-center py-4">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-600 shadow-lg">
-                <Bot className="h-6 w-6 text-white" />
+              <div className="flex h-12 w-12 items-center justify-center">
+                <Image 
+                  src="/img/app_launcher.png" 
+                  alt="AGOS Logo" 
+                  width={64} 
+                  height={64}
+                  className="object-cover"
+                />
               </div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-700 to-cyan-700 bg-clip-text text-transparent">AGOS</h1>
@@ -458,7 +464,15 @@ export default function Home() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <Bot className="h-6 w-6 text-blue-400" />
+                <div className="w-6 h-6 rounded overflow-hidden">
+                  <Image 
+                    src="/img/app_launcher.png" 
+                    alt="AGOS Logo" 
+                    width={24} 
+                    height={24}
+                    className="object-contain"
+                  />
+                </div>
                 <span className="text-lg font-bold">AGOS</span>
               </div>
               <p className="text-gray-400 text-sm">
@@ -502,6 +516,6 @@ export default function Home() {
     </div>
   );
 }
-          
-  
+
+
 

@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, 
@@ -10,7 +11,6 @@ import {
   Thermometer, 
   Users, 
   Video,
-  Bot,
   LogOut,
   Settings,
   List
@@ -79,8 +79,14 @@ export default function AdminLayout({
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center space-x-3 px-6 py-6 border-b border-blue-200/50">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg">
-              <Bot className="h-5 w-5 text-white" />
+            <div className="flex h-12 w-12 items-center justify-center">
+              <Image 
+                src="/img/app_launcher.png" 
+                alt="AGOS Logo" 
+                width={64} 
+                height={64}
+                className="object-contain"
+              />
             </div>
             <div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent">AGOS</h1>

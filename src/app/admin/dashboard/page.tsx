@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +16,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Bot,
   Users,
   Bell,
   Settings,
@@ -179,8 +179,14 @@ export default function AdminDashboard() {
         <div className="mx-8 flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
           <div className="flex gap-6 md:gap-10">
             <div className="flex items-center space-x-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg">
-                <Bot className="h-6 w-6 text-white" />
+              <div className="flex h-12 w-12 items-center justify-center">
+                <Image 
+                  src="/img/app_launcher.png" 
+                  alt="AGOS Logo" 
+                  width={64} 
+                  height={64}
+                  className="object-contain"
+                />
               </div>
               <div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent">AGOS Admin Portal</h1>
