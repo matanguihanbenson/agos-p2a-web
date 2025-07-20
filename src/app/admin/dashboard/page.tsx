@@ -4,11 +4,8 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
+import WeatherDashboard from '@/components/weather/WeatherDashboard';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,18 +17,22 @@ import {
 import {
   Bot,
   Users,
-  Recycle,
-  AlertTriangle,
   Bell,
   Settings,
-  RefreshCw,
-  Battery,
-  Wifi,
-  MoreHorizontal,
   Plus,
   TrendingUp,
   MapPin,
+  Droplets,
+  Thermometer,
+  Eye,
+  Package,
+  AlertTriangle,
+  Activity,
+  ArrowUp,
+  ArrowDown,
+  Minus
 } from 'lucide-react';
+import type { RiverMonitoringData, TrashHotspot } from '@/types';
 
 export default function AdminDashboard() {
   const { logout } = useAuth();
@@ -41,6 +42,133 @@ export default function AdminDashboard() {
       await logout();
     } catch (error: unknown) {
       console.error('Logout failed:', error);
+    }
+  };
+
+  // Sample river monitoring data
+  const riverData: RiverMonitoringData[] = [
+    {
+      id: 'calapan-river',
+      name: 'Calapan River',
+      location: { latitude: 13.4115, longitude: 121.1803 },
+      waterQuality: {
+        ph: 7.2,
+        turbidity: 12.5,
+        temperature: 26.8,
+        dissolvedOxygen: 8.1
+      },
+      trashCollection: {
+        totalKg: 234.5,
+        totalItems: 2156,
+        todayKg: 15.2,
+        todayItems: 89
+      },
+      botId: 'AGOS-001',
+      lastUpdated: new Date(),
+      status: 'good'
+    },
+    {
+      id: 'bucayao-river',
+      name: 'Bucayao River',
+      location: { latitude: 13.4289, longitude: 121.1456 },
+      waterQuality: {
+        ph: 6.8,
+        turbidity: 18.3,
+        temperature: 27.2,
+        dissolvedOxygen: 7.4
+      },
+      trashCollection: {
+        totalKg: 187.3,
+        totalItems: 1724,
+        todayKg: 12.7,
+        todayItems: 67
+      },
+      botId: 'AGOS-002',
+      lastUpdated: new Date(),
+      status: 'fair'
+    },
+    {
+      id: 'naujan-lake',
+      name: 'Naujan Lake',
+      location: { latitude: 13.3289, longitude: 121.3025 },
+      waterQuality: {
+        ph: 7.5,
+        turbidity: 8.2,
+        temperature: 25.9,
+        dissolvedOxygen: 8.8
+      },
+      trashCollection: {
+        totalKg: 156.8,
+        totalItems: 1289,
+        todayKg: 9.4,
+        todayItems: 42
+      },
+      botId: 'AGOS-003',
+      lastUpdated: new Date(),
+      status: 'good'
+    }
+  ];
+
+  // Sample hotspot data
+  const hotspots: TrashHotspot[] = [
+    {
+      id: 'calapan-zone-1',
+      name: 'Calapan River Zone 1',
+      location: { latitude: 13.4115, longitude: 121.1803 },
+      density: 'very-high',
+      itemCount: 2156,
+      area: 'Calapan River',
+      lastUpdated: new Date(),
+      trend: 'increasing'
+    },
+    {
+      id: 'bucayao-zone-2',
+      name: 'Bucayao River Zone 2',
+      location: { latitude: 13.4298, longitude: 121.1445 },
+      density: 'high',
+      itemCount: 1543,
+      area: 'Bucayao River',
+      lastUpdated: new Date(),
+      trend: 'stable'
+    },
+    {
+      id: 'calapan-zone-2',
+      name: 'Calapan River Zone 2',
+      location: { latitude: 13.4095, longitude: 121.1820 },
+      density: 'high',
+      itemCount: 1234,
+      area: 'Calapan River',
+      lastUpdated: new Date(),
+      trend: 'decreasing'
+    }
+  ];
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'good': return 'text-green-600 bg-green-50';
+      case 'fair': return 'text-yellow-600 bg-yellow-50';
+      case 'poor': return 'text-orange-600 bg-orange-50';
+      case 'critical': return 'text-red-600 bg-red-50';
+      default: return 'text-gray-600 bg-gray-50';
+    }
+  };
+
+  const getDensityColor = (density: string) => {
+    switch (density) {
+      case 'very-high': return 'text-red-600 bg-red-50 border-red-200';
+      case 'high': return 'text-orange-600 bg-orange-50 border-orange-200';
+      case 'medium': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'low': return 'text-green-600 bg-green-50 border-green-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
+  const getTrendIcon = (trend: string) => {
+    switch (trend) {
+      case 'increasing': return <ArrowUp className="h-3 w-3 text-red-500" />;
+      case 'decreasing': return <ArrowDown className="h-3 w-3 text-green-500" />;
+      case 'stable': return <Minus className="h-3 w-3 text-gray-500" />;
+      default: return <Minus className="h-3 w-3 text-gray-500" />;
     }
   };
 
@@ -95,305 +223,231 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <div className="mx-8 my-8 space-y-8">
-        {/* Quick Stats */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-blue-200 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-blue-50 to-blue-100">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-blue-700">Active Bots</CardTitle>
-              <div className="p-2 bg-blue-600 rounded-lg">
-                <Bot className="h-4 w-4 text-white" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-blue-900">12</div>
-              <p className="text-xs text-blue-600">
-                <span className="text-emerald-600 font-semibold">+2</span> from yesterday
-              </p>
-            </CardContent>
-          </Card>
+      <div className="mx-8 my-8">
+        <div className="max-w-6xl mx-auto space-y-8">
+          {/* Weather Dashboard - Full Width at Top */}
+          <WeatherDashboard />
 
-          <Card className="border-green-200 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-green-50 to-emerald-100">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-700">Field Operators</CardTitle>
-              <div className="p-2 bg-green-600 rounded-lg">
-                <Users className="h-4 w-4 text-white" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-900">8</div>
-              <p className="text-xs text-green-600">
-                <span className="text-blue-600 font-semibold">All active</span>
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-purple-200 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-purple-50 to-violet-100">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-purple-700">Trash Collected Today</CardTitle>
-              <div className="p-2 bg-purple-600 rounded-lg">
-                <Recycle className="h-4 w-4 text-white" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-purple-900">247</div>
-              <p className="text-xs text-purple-600">
-                <span className="text-emerald-600 font-semibold">+18%</span> vs average
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-orange-200 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-orange-50 to-red-100">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-orange-700">System Alerts</CardTitle>
-              <div className="p-2 bg-orange-600 rounded-lg">
-                <AlertTriangle className="h-4 w-4 text-white" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-orange-900">3</div>
-              <p className="text-xs text-orange-600">
-                <span className="text-red-600 font-semibold">2 require attention</span>
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid gap-8 lg:grid-cols-3">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Bot Fleet Status */}
-            <Card className="border-blue-200 shadow-lg bg-white/80 backdrop-blur">
-              <CardHeader className="border-b border-blue-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl text-blue-900">Bot Fleet Status</CardTitle>
-                    <CardDescription className="text-blue-600">Real-time monitoring of all AGOS bots</CardDescription>
+          {/* Top 3 Trash Density Hotspots and Quick Actions Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Top 3 Trash Density Hotspots - Left side (2/3 width) */}
+            <div className="lg:col-span-2">
+              <Card className="shadow-lg bg-white/80 backdrop-blur h-full">
+                <CardHeader className="border-b border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg text-slate-800 flex items-center">
+                        <AlertTriangle className="h-5 w-5 mr-2 text-red-600" />
+                        Top 3 Trash Density Hotspots
+                      </CardTitle>
+                      <CardDescription className="text-slate-600">Critical areas requiring immediate attention</CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" className="hover:bg-red-50 hover:border-red-300">
+                      View All Hotspots
+                    </Button>
                   </div>
-                  <Button variant="outline" size="sm" className="border-blue-300 text-blue-700 hover:bg-blue-100 shadow-sm">
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Refresh
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {hotspots.map((hotspot, index) => (
+                      <div 
+                        key={hotspot.id} 
+                        className={`border rounded-lg p-4 ${getDensityColor(hotspot.density)} transition-all duration-200 hover:shadow-md`}
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center space-x-2">
+                            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-white shadow-sm">
+                              <span className="text-xs font-bold text-gray-700">#{index + 1}</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              {getTrendIcon(hotspot.trend)}
+                            </div>
+                          </div>
+                          <span className="text-xs px-2 py-1 rounded-full bg-white/70 font-medium capitalize">
+                            {hotspot.density.replace('-', ' ')}
+                          </span>
+                        </div>
+                        <h4 className="font-semibold text-sm mb-2">{hotspot.name}</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs opacity-75">Items</span>
+                            <span className="text-sm font-bold">{hotspot.itemCount.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs opacity-75">Area</span>
+                            <span className="text-xs">{hotspot.area}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs opacity-75">Trend</span>
+                            <span className="text-xs capitalize flex items-center space-x-1">
+                              {getTrendIcon(hotspot.trend)}
+                              <span>{hotspot.trend}</span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Quick Actions - Right side (1/3 width) */}
+            <div className="lg:col-span-1">
+              <Card className="shadow-lg bg-white/80 backdrop-blur h-full">
+                <CardHeader className="border-b border-slate-100">
+                  <CardTitle className="text-lg text-slate-800">Quick Actions</CardTitle>
+                  <CardDescription className="text-slate-600">Common administrative tasks</CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 gap-3">
+                    <Button 
+                      variant="outline" 
+                      className="justify-start h-11 hover:bg-blue-50 hover:border-blue-300 border-slate-200 group transition-all duration-200"
+                    >
+                      <Users className="h-4 w-4 mr-3 text-blue-600 group-hover:text-blue-700" />
+                      <span className="text-slate-700 group-hover:text-blue-700">Add Field Operator</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="justify-start h-11 hover:bg-green-50 hover:border-green-300 border-slate-200 group transition-all duration-200"
+                    >
+                      <Plus className="h-4 w-4 mr-3 text-green-600 group-hover:text-green-700" />
+                      <span className="text-slate-700 group-hover:text-green-700">Add New Bot</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="justify-start h-11 hover:bg-purple-50 hover:border-purple-300 border-slate-200 group transition-all duration-200"
+                    >
+                      <TrendingUp className="h-4 w-4 mr-3 text-purple-600 group-hover:text-purple-700" />
+                      <span className="text-slate-700 group-hover:text-purple-700">View Reports</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="justify-start h-11 hover:bg-orange-50 hover:border-orange-300 border-slate-200 group transition-all duration-200"
+                    >
+                      <MapPin className="h-4 w-4 mr-3 text-orange-600 group-hover:text-orange-700" />
+                      <span className="text-slate-700 group-hover:text-orange-700">View Heatmap</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Real-time River Monitoring */}
+          <Card className="shadow-lg bg-white/80 backdrop-blur">
+            <CardHeader className="border-b border-slate-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg text-slate-800 flex items-center">
+                    <Activity className="h-5 w-5 mr-2 text-blue-600" />
+                    Real-time River Monitoring
+                  </CardTitle>
+                  <CardDescription className="text-slate-600">Live water quality and trash collection data</CardDescription>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs text-green-600 font-medium">Live</span>
+                  </div>
+                  <Button variant="outline" size="sm" className="hover:bg-blue-50 hover:border-blue-300">
+                    View Details
                   </Button>
                 </div>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  {[{
-                    id: 'AGOS-001',
-                    status: 'Active',
-                    location: 'Pasig River - Zone A',
-                    battery: 87,
-                    signal: 'Strong',
-                  },
-                  {
-                    id: 'AGOS-002',
-                    status: 'Active',
-                    location: 'Marikina River - Zone B',
-                    battery: 92,
-                    signal: 'Strong',
-                  },
-                  {
-                    id: 'AGOS-003',
-                    status: 'Charging',
-                    location: 'Station 1',
-                    battery: 45,
-                    signal: 'Good',
-                  },
-                  {
-                    id: 'AGOS-004',
-                    status: 'Maintenance',
-                    location: 'Workshop',
-                    battery: 23,
-                    signal: 'Offline',
-                  }].map((bot) => (
-                    <div key={bot.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-xl bg-gradient-to-r from-white to-slate-50 hover:shadow-md transition-all">
-                      <div className="flex items-center space-x-4">
-                        <Badge 
-                          variant={bot.status === 'Active' ? 'default' : bot.status === 'Charging' ? 'secondary' : 'destructive'}
-                          className={
-                            bot.status === 'Active' 
-                              ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-sm' 
-                              : bot.status === 'Charging'
-                              ? 'bg-gradient-to-r from-blue-500 to-cyan-500'
-                              : 'bg-gradient-to-r from-red-500 to-pink-500'
-                          }
-                        >
-                          {bot.status}
-                        </Badge>
-                        <div>
-                          <p className="font-semibold text-slate-800">{bot.id}</p>
-                          <p className="text-sm text-slate-600">{bot.location}</p>
-                        </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {riverData.map((river) => (
+                  <div key={river.id} className="border border-slate-200 rounded-xl p-5 bg-gradient-to-br from-white to-slate-50 hover:shadow-lg transition-all duration-300">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="font-semibold text-slate-800">{river.name}</h3>
+                        <p className="text-xs text-slate-500">Bot: {river.botId}</p>
                       </div>
-                      <div className="flex items-center space-x-6 text-sm">
-                        <div className="flex items-center space-x-2">
-                          <Battery className="h-4 w-4 text-slate-500" />
-                          <span className="font-medium">{bot.battery}%</span>
-                          <Progress value={bot.battery} className="w-20" />
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(river.status)}`}>
+                        {river.status.toUpperCase()}
+                      </span>
+                    </div>
+
+                    {/* Water Quality Metrics */}
+                    <div className="mb-4">
+                      <h4 className="text-sm font-medium text-slate-700 mb-3 flex items-center">
+                        <Droplets className="h-4 w-4 mr-1 text-blue-500" />
+                        Water Quality
+                      </h4>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-blue-600">pH</span>
+                            <Eye className="h-3 w-3 text-blue-400" />
+                          </div>
+                          <p className="text-lg font-bold text-blue-800">{river.waterQuality.ph}</p>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Wifi className="h-4 w-4 text-slate-500" />
-                          <span className="font-medium">{bot.signal}</span>
+                        <div className="bg-cyan-50 rounded-lg p-3 border border-cyan-100">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-cyan-600">Turbidity</span>
+                            <Eye className="h-3 w-3 text-cyan-400" />
+                          </div>
+                          <p className="text-lg font-bold text-cyan-800">{river.waterQuality.turbidity} NTU</p>
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="hover:bg-blue-100 rounded-lg">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuItem>View Details</DropdownMenuItem>
-                            <DropdownMenuItem>Send Command</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem>Maintenance Mode</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="bg-orange-50 rounded-lg p-3 border border-orange-100">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-orange-600">Temp</span>
+                            <Thermometer className="h-3 w-3 text-orange-400" />
+                          </div>
+                          <p className="text-lg font-bold text-orange-800">{river.waterQuality.temperature}°C</p>
+                        </div>
+                        <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-green-600">DO</span>
+                            <Droplets className="h-3 w-3 text-green-400" />
+                          </div>
+                          <p className="text-lg font-bold text-green-800">{river.waterQuality.dissolvedOxygen} mg/L</p>
+                        </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* Activity Feed */}
-            <Card className="shadow-lg bg-white/80 backdrop-blur">
-              <CardHeader className="border-b border-slate-100">
-                <CardTitle className="text-xl text-slate-800">Recent Activity</CardTitle>
-                <CardDescription className="text-slate-600">Latest system events and notifications</CardDescription>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  {[{
-                    time: '2 min ago',
-                    event: 'AGOS-001 collected 15 plastic bottles',
-                    type: 'success',
-                  },
-                  {
-                    time: '8 min ago',
-                    event: 'Water quality alert in Zone B - pH level anomaly',
-                    type: 'warning',
-                  },
-                  {
-                    time: '15 min ago',
-                    event: 'AGOS-003 completed charging cycle',
-                    type: 'info',
-                  },
-                  {
-                    time: '1 hour ago',
-                    event: 'Field Operator Maria assigned to Zone C',
-                    type: 'info',
-                  },
-                  {
-                    time: '2 hours ago',
-                    event: 'AGOS-002 navigation system updated',
-                    type: 'success',
-                  }].map((activity: { time: string; event: string; type: string }, index: number) => (
-                    <div key={index} className="flex items-start space-x-4 p-3 rounded-lg hover:bg-slate-50 transition-colors">
-                      <div className={`w-3 h-3 rounded-full mt-2 shadow-sm ${
-                        activity.type === 'success' ? 'bg-gradient-to-r from-emerald-400 to-green-500' :
-                        activity.type === 'warning' ? 'bg-gradient-to-r from-yellow-400 to-orange-500' : 'bg-gradient-to-r from-blue-400 to-indigo-500'
-                      }`}></div>
-                      <div className="flex-1 space-y-1">
-                        <p className="text-sm leading-relaxed text-slate-800">{activity.event}</p>
-                        <p className="text-xs text-slate-500 font-medium">{activity.time}</p>
+                    {/* Trash Collection */}
+                    <div>
+                      <h4 className="text-sm font-medium text-slate-700 mb-3 flex items-center">
+                        <Package className="h-4 w-4 mr-1 text-purple-500" />
+                        Trash Collection
+                      </h4>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center p-2 bg-purple-50 rounded-lg border border-purple-100">
+                          <span className="text-xs text-purple-600">Total Weight</span>
+                          <span className="text-sm font-bold text-purple-800">{river.trashCollection.totalKg} kg</span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 bg-indigo-50 rounded-lg border border-indigo-100">
+                          <span className="text-xs text-indigo-600">Total Items</span>
+                          <span className="text-sm font-bold text-indigo-800">{river.trashCollection.totalItems.toLocaleString()}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="text-center p-2 bg-emerald-50 rounded-lg border border-emerald-100">
+                            <p className="text-xs text-emerald-600 mb-1">Today</p>
+                            <p className="text-sm font-bold text-emerald-800">{river.trashCollection.todayKg} kg</p>
+                            <p className="text-xs text-emerald-600">{river.trashCollection.todayItems} items</p>
+                          </div>
+                          <div className="text-center p-2 bg-slate-50 rounded-lg border border-slate-100">
+                            <p className="text-xs text-slate-600 mb-1">Updated</p>
+                            <p className="text-xs text-slate-800 font-medium">
+                              {new Date(river.lastUpdated).toLocaleTimeString('en-US', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-8">
-            {/* Quick Actions */}
-            <Card className="shadow-lg bg-white/80 backdrop-blur">
-              <CardHeader className="border-b border-slate-100">
-                <CardTitle className="text-lg text-slate-800">Quick Actions</CardTitle>
-                <CardDescription className="text-slate-600">Common administrative tasks</CardDescription>
-              </CardHeader>
-              <CardContent className="p-6 space-y-3">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-11 hover:bg-blue-50 hover:border-blue-300 border-slate-200 group transition-all duration-200"
-                >
-                  <Users className="h-4 w-4 mr-3 text-blue-600 group-hover:text-blue-700" />
-                  <span className="text-slate-700 group-hover:text-blue-700">Add Field Operator</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-11 hover:bg-green-50 hover:border-green-300 border-slate-200 group transition-all duration-200"
-                >
-                  <Plus className="h-4 w-4 mr-3 text-green-600 group-hover:text-green-700" />
-                  <span className="text-slate-700 group-hover:text-green-700">Add New Bot</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-11 hover:bg-purple-50 hover:border-purple-300 border-slate-200 group transition-all duration-200"
-                >
-                  <TrendingUp className="h-4 w-4 mr-3 text-purple-600 group-hover:text-purple-700" />
-                  <span className="text-slate-700 group-hover:text-purple-700">View Reports</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-11 hover:bg-orange-50 hover:border-orange-300 border-slate-200 group transition-all duration-200"
-                >
-                  <MapPin className="h-4 w-4 mr-3 text-orange-600 group-hover:text-orange-700" />
-                  <span className="text-slate-700 group-hover:text-orange-700">View Heatmap</span>
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Environmental Metrics */}
-            <Card className="border-blue-200 shadow-lg bg-gradient-to-br from-blue-50/50 to-indigo-50/50 backdrop-blur">
-              <CardHeader className="border-b border-blue-100">
-                <CardTitle className="text-lg text-blue-900">Today&apos;s Metrics</CardTitle>
-                <CardDescription className="text-blue-600">Environmental monitoring data</CardDescription>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-sm font-medium text-slate-700">Water Quality Index</span>
-                  <Badge variant="secondary" className="bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border-blue-200">8.2/10</Badge>
-                </div>
-                <Separator className="bg-blue-100" />
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-sm font-medium text-slate-700">Trash Density</span>
-                  <Badge variant="outline" className="border-green-300 text-green-700 bg-green-50">Low</Badge>
-                </div>
-                <Separator className="bg-blue-100" />
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-sm font-medium text-slate-700">Coverage Area</span>
-                  <Badge variant="secondary" className="bg-gradient-to-r from-purple-100 to-violet-100 text-purple-800">15.2 km²</Badge>
-                </div>
-                <Separator className="bg-blue-100" />
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-sm font-medium text-slate-700">pH Level</span>
-                  <Badge variant="outline" className="border-blue-300 text-blue-700 bg-blue-50">7.4</Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Active Alerts */}
-            <Card className="border-orange-200 shadow-lg bg-gradient-to-br from-orange-50/50 to-red-50/50 backdrop-blur">
-              <CardHeader className="border-b border-orange-100">
-                <CardTitle className="text-lg text-orange-900">Active Alerts</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                <Alert className="border-yellow-200 bg-yellow-50/80">
-                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                  <AlertDescription className="text-yellow-800">
-                    Network latency increased in Zone B
-                  </AlertDescription>
-                </Alert>
-                <Alert className="border-red-200 bg-red-50/80">
-                  <AlertTriangle className="h-4 w-4 text-red-600" />
-                  <AlertDescription className="text-red-800">
-                    Bot AGOS-004 requires maintenance
-                  </AlertDescription>
-                </Alert>
-              </CardContent>
-            </Card>
-          </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

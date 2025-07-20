@@ -214,31 +214,151 @@ const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
     });
     markersRef.current = [];
 
-    // Add markers for each location and trash type
-    locations.forEach(location => {
-      // Determine which trash types to show
-      const trashTypesToShow = selectedTrashType === 'all' 
-        ? ['plasticBottles', 'foodContainers', 'plasticBags', 'metalCans', 'other']
-        : [selectedTrashType];
+    // Only add markers if we have locations
+    if (locations.length === 0) {
+      return;
+    }
 
-      trashTypesToShow.forEach((trashType, index) => {
-        const count = location.breakdown[trashType as keyof TrashBreakdown];
-        if (count && count > 0) {
-          // Offset markers slightly when showing multiple types
-          const latOffset = index * 0.001;
-          const lngOffset = index * 0.001;
-          const markerLat = location.coordinates[0] + latOffset;
-          const markerLng = location.coordinates[1] + lngOffset;
+    // Add markers for each location
+    locations.forEach(location => {
+      // For 'all' trash types, show one marker per location with total items
+      if (selectedTrashType === 'all') {
+        const marker = L.marker(
+          [location.coordinates[0], location.coordinates[1]],
+          { icon: getTrashIcon(location.density) }
+        );
+
+        // Create comprehensive popup content for all trash types
+        const initialPopupContent = `
+          <div style="min-width: 200px; padding: 12px; font-family: system-ui, sans-serif;">
+            <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 8px;">
+              <h3 style="margin: 0; font-size: 15px; font-weight: bold; color: #1f2937;">
+                🗑️ ${location.area}
+              </h3>
+              <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">All Trash Types</p>
+            </div>
+            <div style="font-size: 12px; line-height: 1.4;">
+              <div><strong>Total Items:</strong> ${location.totalItems}</div>
+              <div><strong>Density:</strong> ${location.density}</div>
+              <div style="margin-top: 8px;">
+                <div>🍶 Plastic Bottles: ${location.breakdown.plasticBottles}</div>
+                <div>📦 Food Containers: ${location.breakdown.foodContainers}</div>
+                <div>🛍️ Plastic Bags: ${location.breakdown.plasticBags}</div>
+                <div>🥫 Metal Cans: ${location.breakdown.metalCans}</div>
+                <div>⭐ Other: ${location.breakdown.other}</div>
+              </div>
+            </div>
+            <div style="margin-top: 8px; text-align: center; font-size: 10px; color: #6b7280;">
+              Loading more details...
+            </div>
+          </div>
+        `;
+
+        marker.bindPopup(initialPopupContent, {
+          maxWidth: 300,
+          minWidth: 200,
+          autoPan: true,
+          closeButton: true,
+          autoClose: true,
+          className: 'custom-trash-popup'
+        });
+
+        // Enhanced click event for all trash types
+        marker.on('click', async function(this: L.Marker, e: L.LeafletMouseEvent) {
+          L.DomEvent.stopPropagation(e.originalEvent);
+          onLocationSelect(location);
+          this.openPopup();
           
+          try {
+            const address = await reverseGeocode(location.coordinates[0], location.coordinates[1]);
+            const coordinates = formatCoordinates(location.coordinates[0], location.coordinates[1]);
+            const collectionDate = new Date().toLocaleDateString();
+
+            const detailedContent = `
+              <div style="min-width: 260px; max-width: 320px; font-family: system-ui, sans-serif;">
+                <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 8px;">
+                  <h3 style="margin: 0; font-size: 16px; font-weight: bold; color: #1f2937; display: flex; align-items: center;">
+                    <span style="font-size: 18px; margin-right: 6px;">🗑️</span>
+                    ${location.area}
+                  </h3>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">Complete Waste Breakdown</p>
+                </div>
+
+                <div style="margin-bottom: 8px; padding: 6px; background-color: #f9fafb; border-radius: 4px;">
+                  <h4 style="margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: #374151;">📍 Location</h4>
+                  <div style="font-size: 11px; color: #6b7280; line-height: 1.4;">
+                    <div style="margin-bottom: 2px;"><strong>Address:</strong> ${address}</div>
+                    <div style="margin-bottom: 2px;"><strong>Coordinates:</strong> ${coordinates}</div>
+                    <div><strong>Density:</strong> 
+                      <span style="display: inline-block; width: 8px; height: 8px; background-color: ${getDensityColor(location.density)}; border-radius: 50%; margin: 0 4px;"></span>
+                      ${location.density}
+                    </div>
+                  </div>
+                </div>
+
+                <div style="margin-bottom: 8px; padding: 6px; background-color: #eff6ff; border-radius: 4px;">
+                  <h4 style="margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: #1d4ed8;">📊 Detailed Breakdown</h4>
+                  <div style="font-size: 11px; color: #1e40af; line-height: 1.3;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 6px;">
+                      <div style="display: flex; justify-content: space-between;">
+                        <span>🍶 Bottles</span>
+                        <strong>${location.breakdown.plasticBottles}</strong>
+                      </div>
+                      <div style="display: flex; justify-content: space-between;">
+                        <span>📦 Containers</span>
+                        <strong>${location.breakdown.foodContainers}</strong>
+                      </div>
+                      <div style="display: flex; justify-content: space-between;">
+                        <span>🛍️ Bags</span>
+                        <strong>${location.breakdown.plasticBags}</strong>
+                      </div>
+                      <div style="display: flex; justify-content: space-between;">
+                        <span>🥫 Cans</span>
+                        <strong>${location.breakdown.metalCans}</strong>
+                      </div>
+                      <div style="grid-column: span 2; display: flex; justify-content: space-between;">
+                        <span>⭐ Other</span>
+                        <strong>${location.breakdown.other}</strong>
+                      </div>
+                    </div>
+                    <div style="padding-top: 6px; border-top: 1px solid #dbeafe; font-weight: 600; text-align: center;">
+                      📈 Total: ${location.totalItems} items
+                    </div>
+                  </div>
+                </div>
+
+                <div style="padding: 4px 6px; background-color: #f3f4f6; border-radius: 4px; font-size: 10px; color: #6b7280; text-align: center;">
+                  📅 Updated: ${collectionDate}
+                </div>
+              </div>
+            `;
+            
+            this.setPopupContent(detailedContent);
+            
+          } catch (error) {
+            console.error('Failed to load detailed popup:', error);
+            this.setPopupContent(`
+              <div style="padding: 16px; color: #dc2626; text-align: center;">
+                <h3 style="margin: 0 0 8px 0; font-size: 14px;">❌ Error</h3>
+                <p style="margin: 0; font-size: 12px;">Failed to load details</p>
+              </div>
+            `);
+          }
+        });
+
+        marker.addTo(mapInstanceRef.current!);
+        markersRef.current.push(marker);
+      } else {
+        // For specific trash type, only show marker if that type exists at this location
+        const count = location.breakdown[selectedTrashType as keyof typeof location.breakdown];
+        if (count && count > 0) {
           const marker = L.marker(
-            [markerLat, markerLng],
+            [location.coordinates[0], location.coordinates[1]],
             { icon: getTrashIcon(location.density) }
           );
 
-          // Get trash type details
-          const trashDetails = getTrashTypeDetails(trashType);
+          const trashDetails = getTrashTypeDetails(selectedTrashType);
           
-          // Create initial popup content (simple version)
           const initialPopupContent = `
             <div style="min-width: 200px; padding: 12px; font-family: system-ui, sans-serif;">
               <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 8px;">
@@ -259,7 +379,6 @@ const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
             </div>
           `;
 
-          // Create and bind popup with initial content
           marker.bindPopup(initialPopupContent, {
             maxWidth: 300,
             minWidth: 200,
@@ -269,21 +388,15 @@ const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
             className: 'custom-trash-popup'
           });
 
-          // Add click event with detailed content loading
+          // Specific trash type click event
           marker.on('click', async function(this: L.Marker, e: L.LeafletMouseEvent) {
-            // Stop event propagation to prevent map zoom
             L.DomEvent.stopPropagation(e.originalEvent);
-            
-            // Call location select handler
             onLocationSelect(location);
-            
-            // Open popup immediately with initial content
             this.openPopup();
             
-            // Load detailed content asynchronously
             try {
-              const address = await reverseGeocode(markerLat, markerLng);
-              const coordinates = formatCoordinates(markerLat, markerLng);
+              const address = await reverseGeocode(location.coordinates[0], location.coordinates[1]);
+              const coordinates = formatCoordinates(location.coordinates[0], location.coordinates[1]);
               const collectionDate = new Date().toLocaleDateString();
               const totalAreaItems = location.totalItems;
               const percentage = ((count / totalAreaItems) * 100).toFixed(1);
@@ -342,7 +455,6 @@ const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
                 </div>
               `;
               
-              // Update popup content with detailed information
               this.setPopupContent(detailedContent);
               
             } catch (error) {
@@ -350,7 +462,7 @@ const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
               this.setPopupContent(`
                 <div style="padding: 16px; color: #dc2626; text-align: center;">
                   <h3 style="margin: 0 0 8px 0; font-size: 14px;">❌ Error</h3>
-                  <p style="margin: 0; font-size: 12px;">Failed to load address details. Coordinates: ${markerLat.toFixed(4)}, ${markerLng.toFixed(4)}</p>
+                  <p style="margin: 0; font-size: 12px;">Failed to load details</p>
                 </div>
               `);
             }
@@ -359,10 +471,10 @@ const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
           marker.addTo(mapInstanceRef.current!);
           markersRef.current.push(marker);
         }
-      });
+      }
     });
 
-    // Fit map to show all markers if there are locations
+    // Fit map to show all markers if there are locations and markers were added
     if (locations.length > 0 && markersRef.current.length > 0) {
       const group = new L.FeatureGroup(markersRef.current);
       mapInstanceRef.current.fitBounds(group.getBounds().pad(0.1));

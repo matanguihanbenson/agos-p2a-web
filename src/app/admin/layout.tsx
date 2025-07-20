@@ -12,7 +12,8 @@ import {
   Video,
   Bot,
   LogOut,
-  Settings
+  Settings,
+  List
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -33,6 +34,7 @@ export default function AdminLayout({
     { name: 'Heatmaps', href: '/admin/heatmaps', icon: Thermometer },
     { name: 'User & Bot Management', href: '/admin/user-bot-management', icon: Users },
     { name: 'Live Video', href: '/admin/live-video', icon: Video },
+    { name: 'System Logs', href: '/admin/logs', icon: List },
   ];
 
   const isActive = (href: string) => pathname === href;

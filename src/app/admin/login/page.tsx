@@ -95,8 +95,21 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-cyan-900 flex items-center justify-center p-4">
-      <div className="max-w-sm w-full">
+    <div className="min-h-screen relative flex items-center justify-center p-4">
+      {/* Background image */}
+      <div
+        className="fixed inset-0 w-full h-full z-0"
+        style={{
+          backgroundImage: "url('/img/bg.png')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+        aria-hidden="true"
+      />
+      {/* Overlay for gradient effect */}
+      <div className="fixed inset-0 w-full h-full z-0 bg-gradient-to-br from-blue-900 via-blue-800 to-cyan-900 opacity-40" />
+      <div className="max-w-sm w-full z-10">
         {/* Login Card */}
         <div className="bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-6">
           <div className="text-center mb-6">

@@ -146,6 +146,46 @@ export interface DashboardMetrics {
   operationalEfficiency: number; // percentage
 }
 
+// River monitoring types
+export interface RiverMonitoringData {
+  id: string;
+  name: string;
+  location: {
+    latitude: number;
+    longitude: number;
+  };
+  waterQuality: {
+    ph: number;
+    turbidity: number; // NTU
+    temperature: number; // Celsius
+    dissolvedOxygen: number; // mg/L
+  };
+  trashCollection: {
+    totalKg: number;
+    totalItems: number;
+    todayKg: number;
+    todayItems: number;
+  };
+  botId: string;
+  lastUpdated: Date;
+  status: 'good' | 'fair' | 'poor' | 'critical';
+}
+
+// Hotspot data types
+export interface TrashHotspot {
+  id: string;
+  name: string;
+  location: {
+    latitude: number;
+    longitude: number;
+  };
+  density: 'very-high' | 'high' | 'medium' | 'low';
+  itemCount: number;
+  area: string;
+  lastUpdated: Date;
+  trend: 'increasing' | 'stable' | 'decreasing';
+}
+
 // API response types
 export interface ApiResponse<T = Record<string, unknown>> {
   success: boolean;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { 
   MapPin, 
@@ -49,12 +49,41 @@ export default function TrashDeposits() {
   const [selectedLocation, setSelectedLocation] = useState<TrashLocation | null>(null);
   const [selectedTrashType, setSelectedTrashType] = useState('all');
 
-  // Updated data for Calapan City rivers
+  // Updated data with more natural distribution across waterways
   const trashData = [
+    // Calapan River - Main flow with multiple deposits
     { 
-      id: 'calapan-river-zone-1',
-      area: 'Calapan River - Zone 1', 
-      coordinates: [13.4115, 121.1803], // Calapan River coordinates
+      id: 'calapan-river-upstream',
+      area: 'Calapan River - Upstream', 
+      coordinates: [13.4180, 121.1750], 
+      totalItems: 1856,
+      breakdown: {
+        plasticBottles: 721,
+        foodContainers: 445,
+        plasticBags: 356,
+        metalCans: 234,
+        other: 100
+      },
+      density: 'Very High'
+    },
+    { 
+      id: 'calapan-river-midstream',
+      area: 'Calapan River - Midstream', 
+      coordinates: [13.4115, 121.1803], 
+      totalItems: 1643,
+      breakdown: {
+        plasticBottles: 634,
+        foodContainers: 412,
+        plasticBags: 298,
+        metalCans: 201,
+        other: 98
+      },
+      density: 'High'
+    },
+    { 
+      id: 'calapan-river-downtown',
+      area: 'Calapan River - Downtown', 
+      coordinates: [13.4095, 121.1820],
       totalItems: 2156,
       breakdown: {
         plasticBottles: 892,
@@ -66,37 +95,39 @@ export default function TrashDeposits() {
       density: 'Very High'
     },
     { 
-      id: 'calapan-river-zone-2',
-      area: 'Calapan River - Zone 2', 
-      coordinates: [13.4095, 121.1820],
-      totalItems: 1543,
-      breakdown: {
-        plasticBottles: 623,
-        foodContainers: 398,
-        plasticBags: 276,
-        metalCans: 156,
-        other: 90
-      },
-      density: 'High'
-    },
-    { 
-      id: 'bucayao-river-zone-1',
-      area: 'Bucayao River - Zone 1', 
-      coordinates: [13.4289, 121.1456], // Bucayao River coordinates
+      id: 'calapan-river-mouth',
+      area: 'Calapan River - River Mouth', 
+      coordinates: [13.4045, 121.1845],
       totalItems: 987,
       breakdown: {
-        plasticBottles: 423,
+        plasticBottles: 398,
         foodContainers: 234,
-        plasticBags: 178,
-        metalCans: 98,
-        other: 54
+        plasticBags: 189,
+        metalCans: 123,
+        other: 43
       },
       density: 'Medium'
     },
+
+    // Bucayao River - Natural flow pattern
     { 
-      id: 'bucayao-river-zone-2',
-      area: 'Bucayao River - Zone 2', 
-      coordinates: [13.4298, 121.1445],
+      id: 'bucayao-river-source',
+      area: 'Bucayao River - Source Area', 
+      coordinates: [13.4345, 121.1398], 
+      totalItems: 654,
+      breakdown: {
+        plasticBottles: 234,
+        foodContainers: 156,
+        plasticBags: 123,
+        metalCans: 89,
+        other: 52
+      },
+      density: 'Low'
+    },
+    { 
+      id: 'bucayao-river-residential',
+      area: 'Bucayao River - Residential Area', 
+      coordinates: [13.4289, 121.1456], 
       totalItems: 1234,
       breakdown: {
         plasticBottles: 534,
@@ -108,9 +139,25 @@ export default function TrashDeposits() {
       density: 'High'
     },
     { 
-      id: 'naujan-lake-zone-1',
-      area: 'Naujan Lake - Zone 1', 
-      coordinates: [13.3289, 121.3025], // Naujan Lake coordinates
+      id: 'bucayao-river-confluence',
+      area: 'Bucayao River - Confluence', 
+      coordinates: [13.4198, 121.1523],
+      totalItems: 876,
+      breakdown: {
+        plasticBottles: 345,
+        foodContainers: 198,
+        plasticBags: 156,
+        metalCans: 123,
+        other: 54
+      },
+      density: 'Medium'
+    },
+
+    // Naujan Lake - Distributed around shoreline
+    { 
+      id: 'naujan-lake-north',
+      area: 'Naujan Lake - North Shore', 
+      coordinates: [13.3398, 121.3012], 
       totalItems: 756,
       breakdown: {
         plasticBottles: 298,
@@ -122,9 +169,23 @@ export default function TrashDeposits() {
       density: 'Medium'
     },
     { 
-      id: 'naujan-lake-zone-2',
-      area: 'Naujan Lake - Zone 2', 
-      coordinates: [13.3298, 121.3045],
+      id: 'naujan-lake-east',
+      area: 'Naujan Lake - East Shore', 
+      coordinates: [13.3289, 121.3125],
+      totalItems: 543,
+      breakdown: {
+        plasticBottles: 198,
+        foodContainers: 134,
+        plasticBags: 89,
+        metalCans: 76,
+        other: 46
+      },
+      density: 'Low'
+    },
+    { 
+      id: 'naujan-lake-south',
+      area: 'Naujan Lake - South Shore', 
+      coordinates: [13.3156, 121.3045],
       totalItems: 892,
       breakdown: {
         plasticBottles: 387,
@@ -134,8 +195,83 @@ export default function TrashDeposits() {
         other: 40
       },
       density: 'Medium'
+    },
+    { 
+      id: 'naujan-lake-west',
+      area: 'Naujan Lake - West Shore', 
+      coordinates: [13.3234, 121.2934],
+      totalItems: 434,
+      breakdown: {
+        plasticBottles: 167,
+        foodContainers: 98,
+        plasticBags: 76,
+        metalCans: 65,
+        other: 28
+      },
+      density: 'Low'
+    },
+
+    // Additional smaller tributaries for realism
+    { 
+      id: 'tributary-1',
+      area: 'Small Creek - Barangay A', 
+      coordinates: [13.4267, 121.1634],
+      totalItems: 321,
+      breakdown: {
+        plasticBottles: 123,
+        foodContainers: 78,
+        plasticBags: 56,
+        metalCans: 43,
+        other: 21
+      },
+      density: 'Low'
+    },
+    { 
+      id: 'tributary-2',
+      area: 'Drainage Canal - Market Area', 
+      coordinates: [13.4087, 121.1789],
+      totalItems: 1567,
+      breakdown: {
+        plasticBottles: 645,
+        foodContainers: 398,
+        plasticBags: 287,
+        metalCans: 167,
+        other: 70
+      },
+      density: 'High'
     }
   ];
+
+  // Filter data based on selected area and trash type
+  const filteredData = useMemo(() => {
+    let filtered = trashData;
+
+    // Filter by area
+    if (selectedArea !== 'all') {
+      filtered = filtered.filter(location => {
+        switch (selectedArea) {
+          case 'calapan':
+            return location.area.toLowerCase().includes('calapan');
+          case 'bucayao':
+            return location.area.toLowerCase().includes('bucayao');
+          case 'naujan':
+            return location.area.toLowerCase().includes('naujan');
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Filter by trash type - only show locations that have the selected type
+    if (selectedTrashType !== 'all') {
+      filtered = filtered.filter(location => {
+        const count = location.breakdown[selectedTrashType as keyof typeof location.breakdown];
+        return count > 0;
+      });
+    }
+
+    return filtered;
+  }, [selectedArea, selectedTrashType]);
 
   const getDensityColor = (density: string) => {
     switch (density) {
@@ -195,12 +331,17 @@ export default function TrashDeposits() {
                 <MapPin className="h-6 w-6 text-white" />
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-blue-900">6</p>
+                <p className="text-2xl font-bold text-blue-900">{filteredData.length}</p>
                 <p className="text-xs text-blue-600 font-medium">Areas</p>
               </div>
             </div>
             <h3 className="font-semibold text-blue-900 mb-1">Monitored Zones</h3>
-            <p className="text-sm text-blue-700">Rivers & waterways tracked</p>
+            <p className="text-sm text-blue-700">
+              {selectedArea === 'all' ? 'All waterways' : 
+               selectedArea === 'calapan' ? 'Calapan River system' :
+               selectedArea === 'bucayao' ? 'Bucayao River system' :
+               selectedArea === 'naujan' ? 'Naujan Lake area' : 'Selected areas'} tracked
+            </p>
             <div className="mt-3 flex items-center text-xs text-blue-600">
               <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
               All zones active
@@ -213,15 +354,24 @@ export default function TrashDeposits() {
                 <Recycle className="h-6 w-6 text-white" />
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-green-900">7,568</p>
+                <p className="text-2xl font-bold text-green-900">
+                  {filteredData.reduce((sum, item) => sum + item.totalItems, 0).toLocaleString()}
+                </p>
                 <p className="text-xs text-green-600 font-medium">Items</p>
               </div>
             </div>
             <h3 className="font-semibold text-green-900 mb-1">Total Collected</h3>
-            <p className="text-sm text-green-700">Trash items identified</p>
+            <p className="text-sm text-green-700">
+              {selectedTrashType === 'all' ? 'All trash types' : 
+               selectedTrashType === 'plasticBottles' ? 'Plastic bottles only' :
+               selectedTrashType === 'foodContainers' ? 'Food containers only' :
+               selectedTrashType === 'plasticBags' ? 'Plastic bags only' :
+               selectedTrashType === 'metalCans' ? 'Metal cans only' :
+               'Other debris only'}
+            </p>
             <div className="mt-3 flex items-center text-xs text-green-600">
               <TrendingUp className="w-3 h-3 mr-1" />
-              +12% from last week
+              {filteredData.length > 0 ? '+12% from last week' : 'No data for filter'}
             </div>
           </div>
 
@@ -356,29 +506,39 @@ export default function TrashDeposits() {
                 {viewMode === 'map' ? (
                   <div className="h-96">
                     <TrashDepositsMap 
-                      locations={trashData}
+                      locations={filteredData}
                       onLocationSelect={handleLocationSelect}
                       selectedLocation={selectedLocation}
                       selectedTrashType={selectedTrashType}
                     />
                   </div>
                 ) : (
-                  // Chart view
+                  // Updated chart view with filtered data
                   <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Composition Chart Placeholder */}
+                      {/* Composition Chart with filtered data */}
                       <div className="bg-gray-50 rounded-lg p-6">
                         <h4 className="font-medium text-gray-900 mb-4">Trash Type Distribution</h4>
                         <div className="space-y-3">
-                          {(
-                            [
-                              { type: 'Plastic Bottles', count: 3157, percentage: 41.7, color: 'bg-blue-500' },
-                              { type: 'Food Containers', count: 1863, percentage: 24.6, color: 'bg-green-500' },
-                              { type: 'Plastic Bags', count: 1307, percentage: 17.3, color: 'bg-yellow-500' },
-                              { type: 'Metal Cans', count: 828, percentage: 10.9, color: 'bg-purple-500' },
-                              { type: 'Other Debris', count: 413, percentage: 5.5, color: 'bg-gray-500' },
-                            ] as Array<{ type: string, count: number, percentage: number, color: string }>
-                          ).map((item) => (
+                          {(() => {
+                            const totals = filteredData.reduce((acc, item) => ({
+                              plasticBottles: acc.plasticBottles + item.breakdown.plasticBottles,
+                              foodContainers: acc.foodContainers + item.breakdown.foodContainers,
+                              plasticBags: acc.plasticBags + item.breakdown.plasticBags,
+                              metalCans: acc.metalCans + item.breakdown.metalCans,
+                              other: acc.other + item.breakdown.other
+                            }), { plasticBottles: 0, foodContainers: 0, plasticBags: 0, metalCans: 0, other: 0 });
+                            
+                            const grandTotal = Object.values(totals).reduce((sum, val) => sum + val, 0);
+                            
+                            return [
+                              { type: 'Plastic Bottles', count: totals.plasticBottles, percentage: ((totals.plasticBottles / grandTotal) * 100).toFixed(1), color: 'bg-blue-500' },
+                              { type: 'Food Containers', count: totals.foodContainers, percentage: ((totals.foodContainers / grandTotal) * 100).toFixed(1), color: 'bg-green-500' },
+                              { type: 'Plastic Bags', count: totals.plasticBags, percentage: ((totals.plasticBags / grandTotal) * 100).toFixed(1), color: 'bg-yellow-500' },
+                              { type: 'Metal Cans', count: totals.metalCans, percentage: ((totals.metalCans / grandTotal) * 100).toFixed(1), color: 'bg-purple-500' },
+                              { type: 'Other Debris', count: totals.other, percentage: ((totals.other / grandTotal) * 100).toFixed(1), color: 'bg-gray-500' },
+                            ];
+                          })().map((item) => (
                             <div key={item.type} className="flex items-center justify-between">
                               <div className="flex items-center space-x-3">
                                 <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
@@ -393,11 +553,11 @@ export default function TrashDeposits() {
                         </div>
                       </div>
 
-                      {/* Area Comparison */}
+                      {/* Area Comparison with filtered data */}
                       <div className="bg-gray-50 rounded-lg p-6">
                         <h4 className="font-medium text-gray-900 mb-4">Area Comparison</h4>
                         <div className="space-y-3">
-                          {trashData.map((area) => (
+                          {filteredData.length > 0 ? filteredData.map((area) => (
                             <div key={area.area} className="flex items-center justify-between">
                               <div>
                                 <span className="text-sm font-medium text-gray-900">{area.area}</span>
@@ -412,7 +572,11 @@ export default function TrashDeposits() {
                               </div>
                               <span className="text-sm font-bold text-gray-900">{area.totalItems}</span>
                             </div>
-                          ))}
+                          )) : (
+                            <div className="text-center text-gray-500 py-4">
+                              <p className="text-sm">No data matches current filters</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -422,17 +586,19 @@ export default function TrashDeposits() {
             </div>
           </div>
 
-          {/* Sidebar */}
+          {/* Sidebar with filtered data */}
           <div className="space-y-6">
-            {/* Area Details */}
+            {/* Area Details with filtered data */}
             <div className="bg-white rounded-xl shadow-sm border">
               <div className="p-6 border-b border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900">Area Details</h3>
-                <p className="text-sm text-gray-600 mt-1">Click on zones for detailed breakdown</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {filteredData.length > 0 ? 'Click on zones for detailed breakdown' : 'No areas match current filters'}
+                </p>
               </div>
               <div className="p-6">
                 <div className="space-y-4">
-                  {trashData.map((area, index) => (
+                  {filteredData.length > 0 ? filteredData.map((area, index) => (
                     <div 
                       key={index} 
                       className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 hover:shadow-md ${
@@ -472,7 +638,12 @@ export default function TrashDeposits() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="text-center text-gray-500 py-8">
+                      <p className="text-sm mb-2">No areas found</p>
+                      <p className="text-xs">Try adjusting your filters</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
