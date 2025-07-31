@@ -4,8 +4,8 @@
 
 > 🚀 Revolutionary autonomous technology for river cleanup and environmental monitoring
 
-[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Available-brightgreen?style=for-the-badge)](https://your-demo-url.vercel.app)
-[![Status](https://img.shields.io/badge/📊_Status-Active-success?style=for-the-badge)](https://your-demo-url.vercel.app)
+[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Available-brightgreen?style=for-the-badge)](https://p2a-agos-web.vercel.app/)
+[![Status](https://img.shields.io/badge/📊_Status-Active-success?style=for-the-badge)](https://p2a-agos-web.vercel.app/)
 [![License](https://img.shields.io/badge/📄_License-MIT-blue?style=for-the-badge)](#-license)
 
 **AGOS** is a comprehensive web platform that manages autonomous cleaning boats and provides real-time environmental monitoring for rivers and waterways. Built with Next.js, TypeScript, and Firebase, it empowers environmental conservation through intelligent automation.
@@ -22,7 +22,7 @@
 
 We've deployed AGOS and it's ready for you to explore! 
 
-**🔗 [Access Live Demo](https://your-demo-url.vercel.app)**
+**🔗 [Access Live Demo](https://p2a-agos-web.vercel.app/)**
 
 ### 🔐 **Test Account Credentials**
 
