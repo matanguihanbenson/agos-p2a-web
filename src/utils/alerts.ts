@@ -5,12 +5,13 @@ const alertConfig = {
   success: {
     icon: 'success' as const,
     confirmButtonColor: '#10b981',
-    timer: 3000,
+    timer: 2500,
     timerProgressBar: true,
     showConfirmButton: false,
+    position: 'center' as const,
     zIndex: 99999,
     background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(236,254,255,0.95) 100%)',
-    backdrop: 'rgba(0,0,0,0.4)',
+    backdrop: 'rgba(0,0,0,0.3)',
     customClass: {
       popup: 'modern-alert-popup',
       title: 'modern-alert-title',
@@ -18,15 +19,16 @@ const alertConfig = {
       timerProgressBar: 'modern-progress-bar'
     },
     width: '320px',
-    padding: '1rem',
+    padding: '0.75rem',
   },
   error: {
     icon: 'error' as const,
     confirmButtonColor: '#ef4444',
     showConfirmButton: true,
+    position: 'center' as const,
     zIndex: 99999,
     background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(254,242,242,0.95) 100%)',
-    backdrop: 'rgba(0,0,0,0.4)',
+    backdrop: 'rgba(0,0,0,0.3)',
     customClass: {
       popup: 'modern-alert-popup',
       title: 'modern-alert-title',
@@ -34,7 +36,7 @@ const alertConfig = {
       confirmButton: 'modern-alert-button error-button'
     },
     width: '320px',
-    padding: '1rem',
+    padding: '0.75rem',
   },
   warning: {
     icon: 'warning' as const,
@@ -42,6 +44,7 @@ const alertConfig = {
     showCancelButton: true,
     confirmButtonText: 'Yes, proceed',
     cancelButtonText: 'Cancel',
+    position: 'center' as const,
     zIndex: 99999,
     background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,251,235,0.95) 100%)',
     backdrop: 'rgba(0,0,0,0.4)',
@@ -53,15 +56,16 @@ const alertConfig = {
       cancelButton: 'modern-alert-button cancel-button'
     },
     width: '360px',
-    padding: '1rem',
+    padding: '0.75rem',
   },
   info: {
     icon: 'info' as const,
     confirmButtonColor: '#3b82f6',
     showConfirmButton: true,
+    position: 'center' as const,
     zIndex: 99999,
     background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(239,246,255,0.95) 100%)',
-    backdrop: 'rgba(0,0,0,0.4)',
+    backdrop: 'rgba(0,0,0,0.3)',
     customClass: {
       popup: 'modern-alert-popup',
       title: 'modern-alert-title',
@@ -69,13 +73,14 @@ const alertConfig = {
       confirmButton: 'modern-alert-button info-button'
     },
     width: '320px',
-    padding: '1rem',
+    padding: '0.75rem',
   },
   loading: {
     icon: 'info' as const,
     allowOutsideClick: false,
     allowEscapeKey: false,
     showConfirmButton: false,
+    position: 'center' as const,
     zIndex: 99999,
     background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%)',
     backdrop: 'rgba(0,0,0,0.4)',
@@ -85,7 +90,7 @@ const alertConfig = {
       htmlContainer: 'modern-alert-content'
     },
     width: '280px',
-    padding: '1rem',
+    padding: '0.75rem',
     didOpen: () => {
       Swal.showLoading();
     },
@@ -97,21 +102,10 @@ export const userManagementAlerts = {
   // Success messages
   userAdded: () => Swal.fire({
     ...alertConfig.success,
-    title: 'User Added Successfully!',
+    title: 'User Added!',
     html: `
-      <div class="text-sm text-gray-600 space-y-1">
-        <div class="flex items-center space-x-2">
-          <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-          <span>User account created</span>
-        </div>
-        <div class="flex items-center space-x-2">
-          <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-          <span>Default permissions assigned</span>
-        </div>
-        <div class="flex items-center space-x-2">
-          <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-          <span>Email notifications enabled</span>
-        </div>
+      <div>
+        <div class="text-sm text-gray-600">New operator account created successfully.</div>
       </div>
     `,
   }),
@@ -119,25 +113,41 @@ export const userManagementAlerts = {
   userUpdated: () => Swal.fire({
     ...alertConfig.success,
     title: 'Profile Updated!',
-    text: 'User profile information has been successfully updated.',
+    html: `
+      <div>
+        <div class="text-sm text-gray-600">User information saved successfully.</div>
+      </div>
+    `,
   }),
 
   userActivated: () => Swal.fire({
     ...alertConfig.success,
     title: 'User Activated!',
-    text: 'The user account is now active and can access the system.',
+    html: `
+      <div>
+        <div class="text-sm text-gray-600">Account is now active.</div>
+      </div>
+    `,
   }),
 
   userDeactivated: () => Swal.fire({
     ...alertConfig.success,
     title: 'User Deactivated!',
-    text: 'The user account has been deactivated and access has been revoked.',
+    html: `
+      <div>
+        <div class="text-sm text-gray-600">Account access has been revoked.</div>
+      </div>
+    `,
   }),
 
   botUnlinked: () => Swal.fire({
     ...alertConfig.success,
     title: 'Bot Unlinked!',
-    text: 'The bot has been successfully unlinked from the user.',
+    html: `
+      <div>
+        <div class="text-sm text-gray-600">Bot successfully unlinked from user.</div>
+      </div>
+    `,
   }),
 
   // Error messages
@@ -145,11 +155,8 @@ export const userManagementAlerts = {
     ...alertConfig.error,
     title: 'Failed to Add User',
     html: `
-      <div class="text-sm text-gray-600 mb-3">
-        ${error || 'An error occurred while creating the user account. Please try again.'}
-      </div>
-      <div class="text-xs text-gray-500 bg-gray-50 rounded-lg p-2 border">
-        If the problem persists, contact system administrator.
+      <div>
+        <div class="text-sm text-gray-600">${error || 'Unable to create user account. Please try again.'}</div>
       </div>
     `,
   }),
@@ -157,19 +164,31 @@ export const userManagementAlerts = {
   userUpdateFailed: (error?: string) => Swal.fire({
     ...alertConfig.error,
     title: 'Update Failed',
-    text: error || 'Unable to update user profile. Please check your connection and try again.',
+    html: `
+      <div>
+        <div class="text-sm text-gray-600">${error || 'Unable to update user profile.'}</div>
+      </div>
+    `,
   }),
 
   userStatusUpdateFailed: (error?: string) => Swal.fire({
     ...alertConfig.error,
     title: 'Status Update Failed',
-    text: error || 'Unable to change user status. Please try again.',
+    html: `
+      <div>
+        <div class="text-sm text-gray-600">${error || 'Unable to change user status.'}</div>
+      </div>
+    `,
   }),
 
   botUnlinkFailed: (error?: string) => Swal.fire({
     ...alertConfig.error,
     title: 'Unlink Failed',
-    text: error || 'Unable to unlink bot from user. Please try again.',
+    html: `
+      <div>
+        <div class="text-sm text-gray-600">${error || 'Unable to unlink bot from user.'}</div>
+      </div>
+    `,
   }),
 
   // Warning/Confirmation messages
@@ -177,23 +196,23 @@ export const userManagementAlerts = {
     ...alertConfig.warning,
     title: 'Deactivate User?',
     html: `
-      <div class="space-y-3">
-        <p class="text-gray-700">Are you sure you want to deactivate <strong class="text-gray-900">${userName}</strong>?</p>
-        <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
-          <div class="flex items-start space-x-2">
-            <div class="w-4 h-4 text-orange-500 mt-0.5">⚠️</div>
-            <div class="text-sm text-orange-800">
-              <div class="font-medium mb-2">This will:</div>
-              <div class="space-y-1 text-xs">
-                <div class="flex items-center space-x-2">
+      <div class="space-y-2">
+        <p class="text-gray-700 text-sm">Are you sure you want to deactivate <strong class="text-gray-900">${userName}</strong>?</p>
+        <div class="bg-orange-50 border border-orange-200 rounded-md p-2">
+          <div class="flex items-start space-x-1.5">
+            <div class="text-orange-500 text-xs mt-0.5">⚠️</div>
+            <div class="text-xs text-orange-800">
+              <div class="font-medium mb-1">This will:</div>
+              <div class="space-y-0.5">
+                <div class="flex items-center space-x-1.5">
                   <div class="w-1 h-1 bg-orange-500 rounded-full"></div>
                   <span>Revoke system access</span>
                 </div>
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-1.5">
                   <div class="w-1 h-1 bg-orange-500 rounded-full"></div>
                   <span>Unassign all bots</span>
                 </div>
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-1.5">
                   <div class="w-1 h-1 bg-orange-500 rounded-full"></div>
                   <span>Disable notifications</span>
                 </div>
@@ -203,21 +222,39 @@ export const userManagementAlerts = {
         </div>
       </div>
     `,
+    width: '300px',
+    customClass: {
+      popup: 'confirmation-popup',
+      title: 'confirmation-title',
+      htmlContainer: 'confirmation-content',
+      confirmButton: 'confirmation-button confirm-destructive',
+      cancelButton: 'confirmation-button confirm-cancel',
+    },
+    buttonsStyling: false,
   }),
 
   confirmBotUnlink: (botName: string) => Swal.fire({
     ...alertConfig.warning,
     title: 'Unlink Bot?',
     html: `
-      <div class="space-y-3">
-        <p class="text-gray-700">Are you sure you want to unlink <strong class="text-gray-900">${botName}</strong>?</p>
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-          <div class="text-sm text-blue-800">
-            This will make the bot available for assignment to other operators.
+      <div class="space-y-2">
+        <p class="text-gray-700 text-sm">Are you sure you want to unlink <strong class="text-gray-900">${botName}</strong>?</p>
+        <div class="bg-blue-50 border border-blue-200 rounded-md p-2">
+          <div class="text-xs text-blue-800">
+            Bot will be available for reassignment
           </div>
         </div>
       </div>
     `,
+    width: '280px',
+    customClass: {
+      popup: 'confirmation-popup',
+      title: 'confirmation-title',
+      htmlContainer: 'confirmation-content',
+      confirmButton: 'confirmation-button confirm-warning',
+      cancelButton: 'confirmation-button confirm-cancel',
+    },
+    buttonsStyling: false,
   }),
 };
 
@@ -226,24 +263,10 @@ export const botManagementAlerts = {
   // Success messages
   botAdded: (botId: string) => Swal.fire({
     ...alertConfig.success,
-    title: 'Bot Registered Successfully!',
+    title: 'Bot Registered!',
     html: `
-      <div class="space-y-3">
-        <p class="text-gray-700">Bot <strong class="text-gray-900">${botId}</strong> has been added to your fleet.</p>
-        <div class="text-sm text-gray-600 space-y-1">
-          <div class="flex items-center space-x-2">
-            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span>Registry updated</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span>Ready for assignment</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span>Monitoring enabled</span>
-          </div>
-        </div>
+      <div>
+        <div class="text-sm text-gray-600">${botId} added to your fleet.</div>
       </div>
     `,
   }),
@@ -252,13 +275,8 @@ export const botManagementAlerts = {
     ...alertConfig.success,
     title: 'Bot Assigned!',
     html: `
-      <div class="space-y-3">
-        <p class="text-gray-700">Bot <strong class="text-gray-900">${botId}</strong> has been assigned to <strong class="text-gray-900">${operatorName}</strong>.</p>
-        <div class="bg-green-50 border border-green-200 rounded-lg p-3">
-          <div class="text-sm text-green-800">
-            The operator will receive a notification about the new assignment.
-          </div>
-        </div>
+      <div>
+        <div class="text-sm text-gray-600">${botId} assigned to ${operatorName}.</div>
       </div>
     `,
   }),
@@ -267,13 +285,8 @@ export const botManagementAlerts = {
     ...alertConfig.success,
     title: 'Bot Unregistered!',
     html: `
-      <div class="space-y-3">
-        <p class="text-gray-700">Bot <strong class="text-gray-900">${botId}</strong> has been removed from your fleet.</p>
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-          <div class="text-sm text-blue-800">
-            The bot is now available for registration by other administrators.
-          </div>
-        </div>
+      <div>
+        <div class="text-sm text-gray-600">${botId} removed from your fleet.</div>
       </div>
     `,
   }),
@@ -283,11 +296,8 @@ export const botManagementAlerts = {
     ...alertConfig.error,
     title: 'Invalid Bot ID',
     html: `
-      <div class="text-sm text-gray-600 mb-3">
-        The bot ID was not found in the registry. Please verify the ID and try again.
-      </div>
-      <div class="text-xs text-gray-500 bg-gray-50 rounded-lg p-2 border">
-        Contact support if you believe this is an error.
+      <div>
+        <div class="text-sm text-gray-600">Bot ID not found in registry.</div>
       </div>
     `,
   }),
@@ -295,25 +305,41 @@ export const botManagementAlerts = {
   botAlreadyRegistered: () => Swal.fire({
     ...alertConfig.error,
     title: 'Bot Already Registered',
-    text: 'This bot is already registered to an administrator and cannot be added again.',
+    html: `
+      <div>
+        <div class="text-sm text-gray-600">This bot is already registered.</div>
+      </div>
+    `,
   }),
 
   botRegistrationFailed: (error?: string) => Swal.fire({
     ...alertConfig.error,
     title: 'Registration Failed',
-    text: error || 'Unable to register the bot. Please try again.',
+    html: `
+      <div>
+        <div class="text-sm text-gray-600">${error || 'Unable to register the bot.'}</div>
+      </div>
+    `,
   }),
 
   botAssignmentFailed: (error?: string) => Swal.fire({
     ...alertConfig.error,
     title: 'Assignment Failed',
-    text: error || 'Unable to assign bot to operator. Please try again.',
+    html: `
+      <div>
+        <div class="text-sm text-gray-600">${error || 'Unable to assign bot.'}</div>
+      </div>
+    `,
   }),
 
   botUnregistrationFailed: (error?: string) => Swal.fire({
     ...alertConfig.error,
     title: 'Unregistration Failed',
-    text: error || 'Unable to unregister bot. Please try again.',
+    html: `
+      <div>
+        <div class="text-sm text-gray-600">${error || 'Unable to unregister bot.'}</div>
+      </div>
+    `,
   }),
 
   // Warning/Confirmation messages
@@ -321,30 +347,31 @@ export const botManagementAlerts = {
     ...alertConfig.warning,
     title: 'Unregister Bot?',
     html: `
-      <div class="space-y-4">
-        <p class="text-gray-700">Are you sure you want to unregister <strong class="text-gray-900">${botName}</strong> (${botId})?</p>
+      <div class="space-y-2">
+        <p class="text-gray-700 text-sm">Are you sure you want to unregister <strong class="text-gray-900">${botName}</strong>?</p>
+        <p class="text-xs text-gray-500 font-mono bg-gray-100 px-1.5 py-0.5 rounded text-center">${botId}</p>
         
-        <div class="bg-red-50 border border-red-200 rounded-lg p-3">
-          <div class="flex items-start space-x-2">
-            <div class="w-4 h-4 text-red-500 mt-0.5">⚠️</div>
-            <div class="text-sm text-red-800">
-              <div class="font-medium text-red-700 mb-2">This action cannot be undone!</div>
-              <div class="space-y-1 text-xs">
-                <div class="flex items-center space-x-2">
+        <div class="bg-red-50 border border-red-200 rounded-md p-2">
+          <div class="flex items-start space-x-1.5">
+            <div class="text-red-500 text-xs mt-0.5">⚠️</div>
+            <div class="text-xs text-red-800">
+              <div class="font-medium text-red-700 mb-1">Cannot be undone!</div>
+              <div class="space-y-0.5">
+                <div class="flex items-center space-x-1.5">
                   <div class="w-1 h-1 bg-red-500 rounded-full"></div>
-                  <span>Remove bot from your fleet</span>
+                  <span>Remove from fleet</span>
                 </div>
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-1.5">
                   <div class="w-1 h-1 bg-red-500 rounded-full"></div>
-                  <span>Unassign from current operator</span>
+                  <span>Unassign operator</span>
                 </div>
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-1.5">
                   <div class="w-1 h-1 bg-red-500 rounded-full"></div>
-                  <span>Stop all monitoring</span>
+                  <span>Stop monitoring</span>
                 </div>
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-1.5">
                   <div class="w-1 h-1 bg-red-500 rounded-full"></div>
-                  <span>Make bot available to other admins</span>
+                  <span>Available to others</span>
                 </div>
               </div>
             </div>
@@ -352,8 +379,17 @@ export const botManagementAlerts = {
         </div>
       </div>
     `,
-    confirmButtonText: 'Yes, unregister',
+    confirmButtonText: 'Unregister',
     confirmButtonColor: '#ef4444',
+    width: '320px',
+    customClass: {
+      popup: 'confirmation-popup',
+      title: 'confirmation-title',
+      htmlContainer: 'confirmation-content',
+      confirmButton: 'confirmation-button confirm-destructive',
+      cancelButton: 'confirmation-button confirm-cancel',
+    },
+    buttonsStyling: false,
   }),
 };
 
@@ -361,20 +397,32 @@ export const botManagementAlerts = {
 export const loadingAlerts = {
   validatingBot: () => Swal.fire({
     ...alertConfig.loading,
-    title: 'Validating Bot ID...',
-    html: '<div class="text-sm text-gray-600">Checking bot registry, please wait.</div>',
+    title: 'Validating Bot...',
+    html: `
+      <div>
+        <div class="text-sm text-gray-600">Checking registry...</div>
+      </div>
+    `,
   }),
 
   savingUser: () => Swal.fire({
     ...alertConfig.loading,
     title: 'Saving User...',
-    html: '<div class="text-sm text-gray-600">Updating user information, please wait.</div>',
+    html: `
+      <div>
+        <div class="text-sm text-gray-600">Updating information...</div>
+      </div>
+    `,
   }),
 
   assigningBot: () => Swal.fire({
     ...alertConfig.loading,
     title: 'Assigning Bot...',
-    html: '<div class="text-sm text-gray-600">Processing bot assignment, please wait.</div>',
+    html: `
+      <div>
+        <div class="text-sm text-gray-600">Processing assignment...</div>
+      </div>
+    `,
   }),
 };
 

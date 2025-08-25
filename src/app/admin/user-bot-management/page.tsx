@@ -21,7 +21,7 @@ import {
   Edit,
   X
 } from 'lucide-react';
-import { collection, query, where, onSnapshot, Timestamp, addDoc, updateDoc, doc, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, Timestamp, addDoc, updateDoc, doc, getDocs, deleteDoc } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase';
 import { 
@@ -375,12 +375,8 @@ export default function UserBotManagement() {
     if (!result.isConfirmed) return;
     
     try {
-      // Remove bot from bots collection
-      await updateDoc(doc(db, 'bots', botId), {
-        deleted: true,
-        deleted_at: new Date(),
-        updated_at: new Date()
-      });
+      // Delete bot document completely
+      await deleteDoc(doc(db, 'bots', botId));
 
       // Update registry to mark as unregistered
       const registryQuery = query(
@@ -1208,21 +1204,9 @@ export default function UserBotManagement() {
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                          {isEditingUser ? (
-                            <select
-                              value={editUserData.role || 'field_operator'}
-                              onChange={(e) => handleUserFieldChange('role', e.target.value)}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                            >
-                              <option value="field_operator">Field Operator</option>
-                              <option value="supervisor">Supervisor</option>
-                              <option value="admin">Admin</option>
-                            </select>
-                          ) : (
-                            <div className="w-full px-3 py-2 text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-200 capitalize">
-                              {(selectedItem as User).role.replace('_', ' ')}
-                            </div>
-                          )}
+                          <div className="w-full px-3 py-2 text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-200 capitalize">
+                            {(selectedItem as User).role.replace('_', ' ')}
+                          </div>
                         </div>
                       </div>
 
@@ -1509,7 +1493,7 @@ export default function UserBotManagement() {
                         <button 
                           onClick={() => setManageTab('assign')}
                           className="w-full border border-gray-300 rounded-lg py-2 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                        >
+                          >
                           Cancel
                         </button>
                       </div>
