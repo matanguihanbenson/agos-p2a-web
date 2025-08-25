@@ -2,20 +2,19 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getDatabase } from 'firebase/database';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
 
-// TODO: Add your Firebase configuration
-// Replace this with your actual Firebase config from the Firebase Console
+// Firebase configuration using environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyAVtqDT-qoLscm_SIozlrYwpO87KdWdUZI",
-  authDomain: "p2a-hackathon.firebaseapp.com",
-  databaseURL: "https://p2a-hackathon-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "p2a-hackathon",
-  storageBucket: "p2a-hackathon.firebasestorage.app",
-  messagingSenderId: "1075675221951",
-  appId: "1:1075675221951:web:7d49ce764970065ac45b0a",
-  measurementId: "G-BKLMC9QYXL"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
 // Initialize Firebase
@@ -24,6 +23,7 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firebase services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const realtimeDb = getDatabase(app);
 export const storage = getStorage(app);
 
 // Initialize Analytics (only in browser environment)

@@ -245,41 +245,41 @@ export default function LogsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Compact Header matching Reports */}
+      <div className="bg-white/80 backdrop-blur-sm border-b border-blue-200/30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">System Logs</h1>
-              <p className="text-gray-600 mt-1">Monitor system activities and events in real-time</p>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">System Logs</h1>
+              <p className="text-slate-600 text-sm">Monitor system activities and events in real-time</p>
             </div>
             
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
               <button
                 onClick={() => setAutoRefresh(!autoRefresh)}
-                className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                   autoRefresh 
-                    ? 'bg-green-600 text-white hover:bg-green-700' 
-                    : 'bg-gray-600 text-white hover:bg-gray-700'
+                    ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 shadow-md hover:shadow-lg' 
+                    : 'bg-gradient-to-r from-slate-500 to-slate-600 text-white hover:from-slate-600 hover:to-slate-700 shadow-md hover:shadow-lg'
                 }`}
               >
-                <Clock className="h-4 w-4 mr-2" />
+                <Clock className="h-3 w-3 mr-1.5" />
                 {autoRefresh ? 'Auto-refresh On' : 'Auto-refresh Off'}
               </button>
               <button
                 onClick={refreshLogs}
                 disabled={loading}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`h-3 w-3 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
               </button>
               <button
                 onClick={handleExport}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
               >
-                <Download className="h-4 w-4 mr-2" />
+                <Download className="h-3 w-3 mr-1.5" />
                 Export CSV
               </button>
             </div>
@@ -287,32 +287,32 @@ export default function LogsPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Filters */}
-        <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        {/* Compact Filters */}
+        <div className="bg-gradient-to-br from-white/90 to-slate-50/80 backdrop-blur-sm rounded-xl border border-slate-200/50 p-4 mb-4 shadow-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
             {/* Search */}
             <div className="lg:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+              <label className="block text-xs font-medium text-slate-700 mb-2">Search</label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-3 w-3" />
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search logs..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-8 pr-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
 
             {/* Level Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Level</label>
+              <label className="block text-xs font-medium text-slate-700 mb-2">Level</label>
               <select
                 value={selectedLevel}
                 onChange={(e) => setSelectedLevel(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All Levels</option>
                 <option value="error">Error</option>
@@ -325,11 +325,11 @@ export default function LogsPage() {
 
             {/* Category Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+              <label className="block text-xs font-medium text-slate-700 mb-2">Category</label>
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All Categories</option>
                 <option value="system">System</option>
@@ -343,11 +343,11 @@ export default function LogsPage() {
 
             {/* Time Range Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Time Range</label>
+              <label className="block text-xs font-medium text-slate-700 mb-2">Time Range</label>
               <select
                 value={selectedTimeRange}
                 onChange={(e) => setSelectedTimeRange(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All Time</option>
                 <option value="today">Today</option>
@@ -357,51 +357,51 @@ export default function LogsPage() {
             </div>
           </div>
 
-          {/* Summary Stats */}
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="text-center p-3 bg-gray-50 rounded-lg">
-              <div className="text-lg font-bold text-gray-900">{filteredLogs.length}</div>
-              <div className="text-xs text-gray-500">Total Logs</div>
+          {/* Compact Summary Stats */}
+          <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-2">
+            <div className="text-center p-2 bg-gradient-to-br from-slate-50/50 to-slate-100/50 rounded-lg">
+              <div className="text-base font-bold text-slate-900">{filteredLogs.length}</div>
+              <div className="text-xs text-slate-500">Total Logs</div>
             </div>
-            <div className="text-center p-3 bg-red-50 rounded-lg">
-              <div className="text-lg font-bold text-red-600">
+            <div className="text-center p-2 bg-gradient-to-br from-red-50/50 to-red-100/50 rounded-lg">
+              <div className="text-base font-bold text-red-600">
                 {filteredLogs.filter(log => log.level === 'error').length}
               </div>
-              <div className="text-xs text-gray-500">Errors</div>
+              <div className="text-xs text-slate-500">Errors</div>
             </div>
-            <div className="text-center p-3 bg-yellow-50 rounded-lg">
-              <div className="text-lg font-bold text-yellow-600">
+            <div className="text-center p-2 bg-gradient-to-br from-yellow-50/50 to-yellow-100/50 rounded-lg">
+              <div className="text-base font-bold text-yellow-600">
                 {filteredLogs.filter(log => log.level === 'warn').length}
               </div>
-              <div className="text-xs text-gray-500">Warnings</div>
+              <div className="text-xs text-slate-500">Warnings</div>
             </div>
-            <div className="text-center p-3 bg-blue-50 rounded-lg">
-              <div className="text-lg font-bold text-blue-600">
+            <div className="text-center p-2 bg-gradient-to-br from-blue-50/50 to-blue-100/50 rounded-lg">
+              <div className="text-base font-bold text-blue-600">
                 {filteredLogs.filter(log => log.level === 'info').length}
               </div>
-              <div className="text-xs text-gray-500">Info</div>
+              <div className="text-xs text-slate-500">Info</div>
             </div>
-            <div className="text-center p-3 bg-green-50 rounded-lg">
-              <div className="text-lg font-bold text-green-600">
+            <div className="text-center p-2 bg-gradient-to-br from-green-50/50 to-green-100/50 rounded-lg">
+              <div className="text-base font-bold text-green-600">
                 {filteredLogs.filter(log => log.level === 'success').length}
               </div>
-              <div className="text-xs text-gray-500">Success</div>
+              <div className="text-xs text-slate-500">Success</div>
             </div>
           </div>
         </div>
 
-        {/* Logs Table */}
-        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
+        {/* Compact Logs Table */}
+        <div className="bg-gradient-to-br from-white/90 to-slate-50/80 backdrop-blur-sm rounded-xl border border-slate-200/50 overflow-hidden shadow-lg">
+          <div className="p-4 border-b border-slate-200/50">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                <FileText className="h-5 w-5 mr-2 text-blue-600" />
+              <h3 className="text-base font-semibold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent flex items-center">
+                <FileText className="h-4 w-4 mr-2 text-blue-600" />
                 System Logs
               </h3>
               {autoRefresh && (
                 <div className="flex items-center text-green-600">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
-                  <span className="text-sm font-medium">Live</span>
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse mr-2"></div>
+                  <span className="text-xs font-medium">Live</span>
                 </div>
               )}
             </div>
@@ -409,67 +409,67 @@ export default function LogsPage() {
 
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-slate-50/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Timestamp
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Level
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Category
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Message
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     User/Bot
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-slate-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center">
+                    <td colSpan={6} className="px-4 py-6 text-center">
                       <div className="flex items-center justify-center">
-                        <RefreshCw className="h-6 w-6 animate-spin text-blue-600 mr-2" />
-                        <span className="text-gray-500">Loading logs...</span>
+                        <RefreshCw className="h-4 w-4 animate-spin text-blue-600 mr-2" />
+                        <span className="text-slate-500 text-sm">Loading logs...</span>
                       </div>
                     </td>
                   </tr>
                 ) : filteredLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan={6} className="px-4 py-6 text-center text-slate-500 text-sm">
                       No logs found matching your criteria
                     </td>
                   </tr>
                 ) : (
                   filteredLogs.map((log) => (
                     <React.Fragment key={log.id}>
-                      <tr className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <tr className="hover:bg-slate-50">
+                        <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-900">
                           {log.timestamp.toLocaleString()}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getLevelColor(log.level)}`}>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getLevelColor(log.level)}`}>
                             {getLevelIcon(log.level)}
                             <span className="ml-1 capitalize">{log.level}</span>
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap">
                           <div className="flex items-center">
                             {getCategoryIcon(log.category)}
-                            <span className="ml-2 text-sm text-gray-900 capitalize">{log.category}</span>
+                            <span className="ml-2 text-xs text-slate-900 capitalize">{log.category}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
+                        <td className="px-4 py-3 text-xs text-slate-900">
                           <div className="max-w-md truncate">{log.message}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-500">
                           {log.userName && (
                             <div className="flex items-center">
                               <User className="h-3 w-3 mr-1" />
@@ -483,32 +483,32 @@ export default function LogsPage() {
                             </div>
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <td className="px-4 py-3 whitespace-nowrap text-xs">
                           <button
                             onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}
                             className="text-blue-600 hover:text-blue-700 flex items-center"
                           >
-                            <Eye className="h-4 w-4 mr-1" />
+                            <Eye className="h-3 w-3 mr-1" />
                             {expandedLog === log.id ? (
-                              <ChevronUp className="h-4 w-4" />
+                              <ChevronUp className="h-3 w-3" />
                             ) : (
-                              <ChevronDown className="h-4 w-4" />
+                              <ChevronDown className="h-3 w-3" />
                             )}
                           </button>
                         </td>
                       </tr>
                       {expandedLog === log.id && (
                         <tr>
-                          <td colSpan={6} className="px-6 py-4 bg-gray-50">
-                            <div className="text-sm">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <td colSpan={6} className="px-4 py-3 bg-slate-50">
+                            <div className="text-xs">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div>
-                                  <h4 className="font-medium text-gray-900 mb-2">Details</h4>
-                                  <p className="text-gray-700">{log.details || 'No additional details available'}</p>
+                                  <h4 className="font-medium text-slate-900 mb-2">Details</h4>
+                                  <p className="text-slate-700">{log.details || 'No additional details available'}</p>
                                 </div>
                                 <div>
-                                  <h4 className="font-medium text-gray-900 mb-2">Metadata</h4>
-                                  <div className="space-y-1 text-gray-600">
+                                  <h4 className="font-medium text-slate-900 mb-2">Metadata</h4>
+                                  <div className="space-y-1 text-slate-600">
                                     {log.ipAddress && <div><strong>IP:</strong> {log.ipAddress}</div>}
                                     {log.userAgent && <div><strong>User Agent:</strong> {log.userAgent}</div>}
                                     {log.metadata && (
