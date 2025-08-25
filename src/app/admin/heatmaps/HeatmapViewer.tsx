@@ -22,10 +22,9 @@ interface HeatmapArea {
 
 interface HeatmapViewerProps {
   areas: HeatmapArea[];
-  isAnimated: boolean;
 }
 
-const HeatmapViewer: React.FC<HeatmapViewerProps> = ({ areas, isAnimated }) => {
+const HeatmapViewer: React.FC<HeatmapViewerProps> = ({ areas }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layersRef = useRef<L.Polygon[]>([]);
@@ -44,9 +43,9 @@ const HeatmapViewer: React.FC<HeatmapViewerProps> = ({ areas, isAnimated }) => {
       maxZoom: 19,
     }).addTo(map);
 
-    // Add zoom control to bottom-right
+    // Add zoom control to top-right
     L.control.zoom({
-      position: 'bottomright'
+      position: 'topright'
     }).addTo(map);
 
     mapInstanceRef.current = map;
@@ -80,8 +79,8 @@ const HeatmapViewer: React.FC<HeatmapViewerProps> = ({ areas, isAnimated }) => {
         weight: 2,
         opacity: 0.8,
         fillColor: area.color,
-        fillOpacity: isAnimated ? 0.6 : 0.4,
-        className: isAnimated ? 'heatmap-polygon-animated' : 'heatmap-polygon'
+        fillOpacity: 0.4,
+        className: 'heatmap-polygon'
       });
 
       // Create popup content
@@ -142,7 +141,7 @@ const HeatmapViewer: React.FC<HeatmapViewerProps> = ({ areas, isAnimated }) => {
         const layer = e.target as L.Polygon;
         layer.setStyle({
           weight: 2,
-          fillOpacity: isAnimated ? 0.6 : 0.4,
+          fillOpacity: 0.4,
           opacity: 0.8
         });
       });
@@ -165,7 +164,7 @@ const HeatmapViewer: React.FC<HeatmapViewerProps> = ({ areas, isAnimated }) => {
       mapInstanceRef.current.fitBounds(group.getBounds().pad(0.1));
     }
 
-  }, [areas, isAnimated]);
+  }, [areas]);
 
   return (
     <>
@@ -175,7 +174,7 @@ const HeatmapViewer: React.FC<HeatmapViewerProps> = ({ areas, isAnimated }) => {
         style={{ minHeight: '400px' }}
       />
       
-      {/* Custom CSS for animations and styling */}
+      {/* Custom CSS for styling */}
       <style jsx global>{`
         .leaflet-container {
           z-index: 10 !important;
@@ -191,20 +190,6 @@ const HeatmapViewer: React.FC<HeatmapViewerProps> = ({ areas, isAnimated }) => {
         
         .heatmap-polygon {
           transition: all 0.3s ease;
-        }
-        
-        .heatmap-polygon-animated {
-          animation: heatmapPulse 3s ease-in-out infinite;
-          transition: all 0.3s ease;
-        }
-        
-        @keyframes heatmapPulse {
-          0%, 100% {
-            fill-opacity: 0.4;
-          }
-          50% {
-            fill-opacity: 0.7;
-          }
         }
         
         .heatmap-popup .leaflet-popup-content-wrapper {
@@ -246,3 +231,4 @@ const HeatmapViewer: React.FC<HeatmapViewerProps> = ({ areas, isAnimated }) => {
 };
 
 export default HeatmapViewer;
+          
