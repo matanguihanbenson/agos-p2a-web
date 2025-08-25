@@ -19,10 +19,10 @@ import {
 const TrashDepositsMap = dynamic(() => import('@/app/admin/trash-deposits/TrashDepositsMap'), {
   ssr: false,
   loading: () => (
-    <div className="bg-gray-100 rounded-lg h-96 flex items-center justify-center">
+    <div className="bg-gray-100 rounded-lg h-64 flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600 font-medium">Loading map...</p>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+        <p className="text-gray-600 font-medium text-sm">Loading map...</p>
       </div>
     </div>
   )
@@ -298,70 +298,70 @@ export default function TrashDeposits() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Compact Header */}
+      <div className="bg-white/80 backdrop-blur-sm border-b border-blue-200/30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Trash Deposits Analysis</h1>
-              <p className="text-gray-600 mt-1">Geographic distribution and composition of collected waste</p>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Trash Deposits Analysis</h1>
+              <p className="text-slate-600 text-sm">Geographic distribution and composition of collected waste</p>
             </div>
             
-            <div className="flex items-center space-x-3">
-              <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                <RefreshCw className="h-4 w-4 mr-2" />
+            <div className="flex items-center space-x-2">
+              <button className="inline-flex items-center px-3 py-1.5 border border-slate-200/50 rounded-lg text-sm font-medium text-slate-700 bg-white/70 hover:bg-white transition-all duration-200 shadow-sm hover:shadow-md">
+                <RefreshCw className="h-3 w-3 mr-1" />
                 Refresh
               </button>
-              <button className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
-                <Download className="h-4 w-4 mr-2" />
-                Export Data
+              <button className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg">
+                <Download className="h-3 w-3 mr-1" />
+                Export
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Summary Statistics - Moved to top with enhanced design */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg border border-blue-200 p-6 hover:shadow-xl transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-blue-600 rounded-lg shadow-md">
-                <MapPin className="h-6 w-6 text-white" />
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        {/* Compact Summary Statistics */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+          <div className="bg-gradient-to-br from-white/90 to-blue-50/80 backdrop-blur-sm rounded-xl border border-blue-200/30 p-4 shadow-lg hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md">
+                <MapPin className="h-4 w-4 text-white" />
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-blue-900">{filteredData.length}</p>
+                <p className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">{filteredData.length}</p>
                 <p className="text-xs text-blue-600 font-medium">Areas</p>
               </div>
             </div>
-            <h3 className="font-semibold text-blue-900 mb-1">Monitored Zones</h3>
-            <p className="text-sm text-blue-700">
+            <h3 className="font-semibold text-slate-800 mb-1 text-sm">Monitored Zones</h3>
+            <p className="text-xs text-slate-600">
               {selectedArea === 'all' ? 'All waterways' : 
                selectedArea === 'calapan' ? 'Calapan River system' :
                selectedArea === 'bucayao' ? 'Bucayao River system' :
                selectedArea === 'naujan' ? 'Naujan Lake area' : 'Selected areas'} tracked
             </p>
-            <div className="mt-3 flex items-center text-xs text-blue-600">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+            <div className="mt-2 flex items-center text-xs text-blue-600">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></div>
               All zones active
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-xl shadow-lg border border-green-200 p-6 hover:shadow-xl transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-green-600 rounded-lg shadow-md">
-                <Recycle className="h-6 w-6 text-white" />
+          <div className="bg-gradient-to-br from-white/90 to-emerald-50/80 backdrop-blur-sm rounded-xl border border-emerald-200/30 p-4 shadow-lg hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg shadow-md">
+                <Recycle className="h-4 w-4 text-white" />
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-green-900">
+                <p className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent">
                   {filteredData.reduce((sum, item) => sum + item.totalItems, 0).toLocaleString()}
                 </p>
-                <p className="text-xs text-green-600 font-medium">Items</p>
+                <p className="text-xs text-emerald-600 font-medium">Items</p>
               </div>
             </div>
-            <h3 className="font-semibold text-green-900 mb-1">Total Collected</h3>
-            <p className="text-sm text-green-700">
+            <h3 className="font-semibold text-slate-800 mb-1 text-sm">Total Collected</h3>
+            <p className="text-xs text-slate-600">
               {selectedTrashType === 'all' ? 'All trash types' : 
                selectedTrashType === 'plasticBottles' ? 'Plastic bottles only' :
                selectedTrashType === 'foodContainers' ? 'Food containers only' :
@@ -369,60 +369,60 @@ export default function TrashDeposits() {
                selectedTrashType === 'metalCans' ? 'Metal cans only' :
                'Other debris only'}
             </p>
-            <div className="mt-3 flex items-center text-xs text-green-600">
+            <div className="mt-2 flex items-center text-xs text-emerald-600">
               <TrendingUp className="w-3 h-3 mr-1" />
               {filteredData.length > 0 ? '+12% from last week' : 'No data for filter'}
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-50 to-violet-100 rounded-xl shadow-lg border border-purple-200 p-6 hover:shadow-xl transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-purple-600 rounded-lg shadow-md">
-                <BarChart3 className="h-6 w-6 text-white" />
+          <div className="bg-gradient-to-br from-white/90 to-purple-50/80 backdrop-blur-sm rounded-xl border border-purple-200/30 p-4 shadow-lg hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-md">
+                <BarChart3 className="h-4 w-4 text-white" />
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-purple-900">1,261</p>
+                <p className="text-xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">1,261</p>
                 <p className="text-xs text-purple-600 font-medium">Avg/Zone</p>
               </div>
             </div>
-            <h3 className="font-semibold text-purple-900 mb-1">Average Density</h3>
-            <p className="text-sm text-purple-700">Items per monitored area</p>
-            <div className="mt-3 flex items-center text-xs text-purple-600">
+            <h3 className="font-semibold text-slate-800 mb-1 text-sm">Average Density</h3>
+            <p className="text-xs text-slate-600">Items per monitored area</p>
+            <div className="mt-2 flex items-center text-xs text-purple-600">
               <Activity className="w-3 h-3 mr-1" />
               Moderate levels
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-orange-50 to-red-100 rounded-xl shadow-lg border border-orange-200 p-6 hover:shadow-xl transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-orange-600 rounded-lg shadow-md">
-                <AlertTriangle className="h-6 w-6 text-white" />
+          <div className="bg-gradient-to-br from-white/90 to-orange-50/80 backdrop-blur-sm rounded-xl border border-orange-200/30 p-4 shadow-lg hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-md">
+                <AlertTriangle className="h-4 w-4 text-white" />
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-orange-900">1</p>
+                <p className="text-xl font-bold bg-gradient-to-r from-orange-600 to-orange-800 bg-clip-text text-transparent">1</p>
                 <p className="text-xs text-orange-600 font-medium">Zone</p>
               </div>
             </div>
-            <h3 className="font-semibold text-orange-900 mb-1">High Density Alert</h3>
-            <p className="text-sm text-orange-700">Calapan River Z1</p>
-            <div className="mt-3 flex items-center text-xs text-orange-600">
-              <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
+            <h3 className="font-semibold text-slate-800 mb-1 text-sm">High Density Alert</h3>
+            <p className="text-xs text-slate-600">Calapan River Z1</p>
+            <div className="mt-2 flex items-center text-xs text-orange-600">
+              <div className="w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></div>
               Requires attention
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Map/Chart Display */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Compact Map/Chart Display */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm border">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex justify-between items-center mb-6">
+            <div className="bg-gradient-to-br from-white/90 to-slate-50/80 backdrop-blur-sm rounded-xl border border-slate-200/50 shadow-lg">
+              <div className="p-4 border-b border-slate-200/50">
+                <div className="flex justify-between items-center mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-base font-semibold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
                       {viewMode === 'map' ? 'Geographic Distribution' : 'Trash Composition Analysis'}
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-slate-600 mt-0.5">
                       {viewMode === 'map' 
                         ? 'Interactive map showing trash deposits across waterways' 
                         : 'Statistical breakdown of collected waste types'
@@ -430,41 +430,41 @@ export default function TrashDeposits() {
                     </p>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1">
                     <button
                       onClick={() => setViewMode('map')}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                         viewMode === 'map' 
-                          ? 'bg-blue-600 text-white' 
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md' 
+                          : 'bg-gradient-to-r from-slate-50 to-slate-100 text-slate-700 hover:from-slate-100 hover:to-slate-200 border border-slate-200/50'
                       }`}
                     >
-                      <MapPin className="h-4 w-4 mr-2 inline" />
-                      Map View
+                      <MapPin className="h-3 w-3 mr-1 inline" />
+                      Map
                     </button>
                     <button
                       onClick={() => setViewMode('chart')}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                         viewMode === 'chart' 
-                          ? 'bg-blue-600 text-white' 
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md' 
+                          : 'bg-gradient-to-r from-slate-50 to-slate-100 text-slate-700 hover:from-slate-100 hover:to-slate-200 border border-slate-200/50'
                       }`}
                     >
-                      <BarChart3 className="h-4 w-4 mr-2 inline" />
-                      Chart View
+                      <BarChart3 className="h-3 w-3 mr-1 inline" />
+                      Chart
                     </button>
                   </div>
                 </div>
 
-                {/* Filters moved inside Geographic Distribution section */}
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center space-x-2">
-                      <MapPin className="h-4 w-4 text-gray-500" />
+                {/* Compact Filters */}
+                <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg p-3 border border-slate-200/50">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center space-x-1.5">
+                      <MapPin className="h-3 w-3 text-slate-500" />
                       <select 
                         value={selectedArea}
                         onChange={(e) => setSelectedArea(e.target.value)}
-                        className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                        className="border border-slate-200/50 rounded-md px-2.5 py-1 text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 bg-white/70 backdrop-blur-sm"
                       >
                         <option value="all">All Areas</option>
                         <option value="calapan">Calapan River</option>
@@ -473,12 +473,12 @@ export default function TrashDeposits() {
                       </select>
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                      <Filter className="h-4 w-4 text-gray-500" />
+                    <div className="flex items-center space-x-1.5">
+                      <Filter className="h-3 w-3 text-slate-500" />
                       <select 
                         value={selectedTrashType}
                         onChange={(e) => setSelectedTrashType(e.target.value)}
-                        className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                        className="border border-slate-200/50 rounded-md px-2.5 py-1 text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 bg-white/70 backdrop-blur-sm"
                       >
                         <option value="all">All Types</option>
                         <option value="plasticBottles">Plastic Bottles</option>
@@ -489,12 +489,12 @@ export default function TrashDeposits() {
                       </select>
                     </div>
 
-                    <div className="ml-auto flex items-center space-x-2">
-                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg transition-colors">
-                        <Layers className="h-4 w-4" />
+                    <div className="ml-auto flex items-center space-x-1.5">
+                      <button className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-white/50 rounded-lg transition-colors">
+                        <Layers className="h-3 w-3" />
                       </button>
-                      <button className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
-                        <RefreshCw className="h-3 w-3 mr-1" />
+                      <button className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-slate-700 bg-white/70 border border-slate-200/50 rounded-md hover:bg-white transition-colors shadow-sm">
+                        <RefreshCw className="h-2.5 w-2.5 mr-1" />
                         Refresh
                       </button>
                     </div>
@@ -502,9 +502,9 @@ export default function TrashDeposits() {
                 </div>
               </div>
               
-              <div className="p-6">
+              <div className="p-4">
                 {viewMode === 'map' ? (
-                  <div className="h-96">
+                  <div className="h-64">
                     <TrashDepositsMap 
                       locations={filteredData}
                       onLocationSelect={handleLocationSelect}
@@ -513,13 +513,13 @@ export default function TrashDeposits() {
                     />
                   </div>
                 ) : (
-                  // Updated chart view with filtered data
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Composition Chart with filtered data */}
-                      <div className="bg-gray-50 rounded-lg p-6">
-                        <h4 className="font-medium text-gray-900 mb-4">Trash Type Distribution</h4>
-                        <div className="space-y-3">
+                  // Compact chart view
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Compact Composition Chart */}
+                      <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg p-4 border border-slate-200/50">
+                        <h4 className="font-medium text-slate-800 mb-3 text-sm">Trash Type Distribution</h4>
+                        <div className="space-y-2">
                           {(() => {
                             const totals = filteredData.reduce((acc, item) => ({
                               plasticBottles: acc.plasticBottles + item.breakdown.plasticBottles,
@@ -540,28 +540,28 @@ export default function TrashDeposits() {
                             ];
                           })().map((item) => (
                             <div key={item.type} className="flex items-center justify-between">
-                              <div className="flex items-center space-x-3">
-                                <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
-                                <span className="text-sm text-gray-900">{item.type}</span>
+                              <div className="flex items-center space-x-2">
+                                <div className={`w-2.5 h-2.5 rounded-full ${item.color}`}></div>
+                                <span className="text-xs text-slate-800">{item.type}</span>
                               </div>
                               <div className="text-right">
-                                <span className="text-sm font-medium text-gray-900">{item.count}</span>
-                                <span className="text-xs text-gray-500 ml-2">({item.percentage}%)</span>
+                                <span className="text-xs font-medium text-slate-800">{item.count}</span>
+                                <span className="text-xs text-slate-500 ml-1">({item.percentage}%)</span>
                               </div>
                             </div>
                           ))}
                         </div>
                       </div>
 
-                      {/* Area Comparison with filtered data */}
-                      <div className="bg-gray-50 rounded-lg p-6">
-                        <h4 className="font-medium text-gray-900 mb-4">Area Comparison</h4>
-                        <div className="space-y-3">
+                      {/* Compact Area Comparison */}
+                      <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg p-4 border border-slate-200/50">
+                        <h4 className="font-medium text-slate-800 mb-3 text-sm">Area Comparison</h4>
+                        <div className="space-y-2">
                           {filteredData.length > 0 ? filteredData.map((area) => (
                             <div key={area.area} className="flex items-center justify-between">
                               <div>
-                                <span className="text-sm font-medium text-gray-900">{area.area}</span>
-                                <span className={`text-xs ml-2 px-2 py-1 rounded-full ${
+                                <span className="text-xs font-medium text-slate-800">{area.area}</span>
+                                <span className={`text-xs ml-1.5 px-1.5 py-0.5 rounded-full ${
                                   area.density === 'Very High' ? 'bg-red-100 text-red-800' :
                                   area.density === 'High' ? 'bg-orange-100 text-orange-800' :
                                   area.density === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
@@ -570,11 +570,11 @@ export default function TrashDeposits() {
                                   {area.density}
                                 </span>
                               </div>
-                              <span className="text-sm font-bold text-gray-900">{area.totalItems}</span>
+                              <span className="text-xs font-bold text-slate-800">{area.totalItems}</span>
                             </div>
                           )) : (
-                            <div className="text-center text-gray-500 py-4">
-                              <p className="text-sm">No data matches current filters</p>
+                            <div className="text-center text-slate-500 py-4">
+                              <p className="text-xs">No data matches current filters</p>
                             </div>
                           )}
                         </div>
@@ -586,61 +586,61 @@ export default function TrashDeposits() {
             </div>
           </div>
 
-          {/* Sidebar with filtered data */}
-          <div className="space-y-6">
-            {/* Area Details with filtered data */}
-            <div className="bg-white rounded-xl shadow-sm border">
-              <div className="p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Area Details</h3>
-                <p className="text-sm text-gray-600 mt-1">
+          {/* Compact Sidebar */}
+          <div className="space-y-4">
+            {/* Compact Area Details */}
+            <div className="bg-gradient-to-br from-white/90 to-slate-50/80 backdrop-blur-sm rounded-xl border border-slate-200/50 shadow-lg">
+              <div className="p-4 border-b border-slate-200/50">
+                <h3 className="text-base font-semibold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Area Details</h3>
+                <p className="text-sm text-slate-600 mt-0.5">
                   {filteredData.length > 0 ? 'Click on zones for detailed breakdown' : 'No areas match current filters'}
                 </p>
               </div>
-              <div className="p-6">
-                <div className="space-y-4">
+              <div className="p-4">
+                <div className="space-y-3">
                   {filteredData.length > 0 ? filteredData.map((area, index) => (
                     <div 
                       key={index} 
-                      className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      className={`border rounded-lg p-3 cursor-pointer transition-all duration-200 hover:shadow-md ${
                         selectedLocation?.id === area.id 
-                          ? 'border-blue-500 bg-blue-50 shadow-md' 
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-blue-100 shadow-md' 
+                          : 'border-slate-200/50 hover:border-slate-300/50 bg-gradient-to-r from-white to-slate-50'
                       }`}
                       onClick={() => handleLocationSelect(area)}
                     >
-                      <div className="flex justify-between items-start mb-3">
+                      <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h4 className="font-medium text-gray-900 text-sm">{area.area}</h4>
-                          <p className={`text-xs font-medium ${getDensityTextColor(area.density)} flex items-center mt-1`}>
-                            <div className={`w-2 h-2 rounded-full mr-2 ${getDensityColor(area.density)}`}></div>
+                          <h4 className="font-medium text-slate-800 text-sm">{area.area}</h4>
+                          <p className={`text-xs font-medium ${getDensityTextColor(area.density)} flex items-center mt-0.5`}>
+                            <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${getDensityColor(area.density)}`}></div>
                             {area.density} Density
                           </p>
                         </div>
-                        <span className="text-lg font-bold text-gray-900">{area.totalItems}</span>
+                        <span className="text-base font-bold text-slate-800">{area.totalItems}</span>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="grid grid-cols-2 gap-1.5 text-xs">
                         <div className="flex justify-between">
-                          <span className="text-gray-600">🍶 Bottles</span>
+                          <span className="text-slate-600">🍶 Bottles</span>
                           <span className="font-medium">{area.breakdown.plasticBottles}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">📦 Containers</span>
+                          <span className="text-slate-600">📦 Containers</span>
                           <span className="font-medium">{area.breakdown.foodContainers}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">🛍️ Bags</span>
+                          <span className="text-slate-600">🛍️ Bags</span>
                           <span className="font-medium">{area.breakdown.plasticBags}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">🥫 Cans</span>
+                          <span className="text-slate-600">🥫 Cans</span>
                           <span className="font-medium">{area.breakdown.metalCans}</span>
                         </div>
                       </div>
                     </div>
                   )) : (
-                    <div className="text-center text-gray-500 py-8">
-                      <p className="text-sm mb-2">No areas found</p>
+                    <div className="text-center text-slate-500 py-6">
+                      <p className="text-sm mb-1">No areas found</p>
                       <p className="text-xs">Try adjusting your filters</p>
                     </div>
                   )}
@@ -648,13 +648,13 @@ export default function TrashDeposits() {
               </div>
             </div>
 
-            {/* Legend */}
-            <div className="bg-white rounded-xl shadow-sm border">
-              <div className="p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Density Legend</h3>
-                <p className="text-sm text-gray-600 mt-1">Trash concentration levels</p>
+            {/* Compact Legend */}
+            <div className="bg-gradient-to-br from-white/90 to-slate-50/80 backdrop-blur-sm rounded-xl border border-slate-200/50 shadow-lg">
+              <div className="p-4 border-b border-slate-200/50">
+                <h3 className="text-base font-semibold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Density Legend</h3>
+                <p className="text-sm text-slate-600 mt-0.5">Trash concentration levels</p>
               </div>
-              <div className="p-6 space-y-3">
+              <div className="p-4 space-y-2">
                 {(
                   [
                     { level: 'Very High', range: '1500+ items', color: 'bg-red-500', description: 'Critical - Immediate action needed' },
@@ -663,14 +663,14 @@ export default function TrashDeposits() {
                     { level: 'Low', range: '0-499 items', color: 'bg-green-500', description: 'Well maintained area' },
                   ] as Array<{ level: string, range: string, color: string, description: string }>
                 ).map((item) => (
-                  <div key={item.level} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                    <div className={`w-4 h-4 rounded-full ${item.color} mt-0.5 shadow-sm`}></div>
+                  <div key={item.level} className="flex items-start space-x-2.5 p-2 rounded-lg hover:bg-slate-50 transition-colors">
+                    <div className={`w-3 h-3 rounded-full ${item.color} mt-0.5 shadow-sm`}></div>
                     <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-gray-900">{item.level}</span>
-                        <span className="text-xs text-gray-500 font-medium">{item.range}</span>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-sm font-medium text-slate-800">{item.level}</span>
+                        <span className="text-xs text-slate-500 font-medium">{item.range}</span>
                       </div>
-                      <p className="text-xs text-gray-600">{item.description}</p>
+                      <p className="text-xs text-slate-600">{item.description}</p>
                     </div>
                   </div>
                 ))}

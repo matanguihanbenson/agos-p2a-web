@@ -35,12 +35,12 @@ export default function WeatherDashboard() {
 
   if (isLoading && !weatherData) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-3">
         {/* Current Weather Loading */}
-        <div className="relative overflow-hidden border-0 shadow-2xl bg-gradient-to-br from-slate-200 via-slate-300 to-slate-400 rounded-xl">
-          <div className="p-8 text-center">
-            <Loader2 className="h-12 w-12 text-white animate-spin mx-auto mb-4" />
-            <div className="text-white/90 text-lg font-medium">Loading current weather...</div>
+        <div className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-slate-200 via-slate-300 to-slate-400 rounded-lg">
+          <div className="p-4 text-center">
+            <Loader2 className="h-8 w-8 text-white animate-spin mx-auto mb-2" />
+            <div className="text-white/90 text-sm font-medium">Loading weather...</div>
           </div>
         </div>
       </div>
@@ -49,17 +49,17 @@ export default function WeatherDashboard() {
 
   if (error && !weatherData) {
     return (
-      <div className="bg-gradient-to-br from-red-50 to-red-100 border border-red-200/50 rounded-xl p-6 shadow-lg">
-        <div className="text-center space-y-4">
-          <div className="p-3 bg-red-100 rounded-full w-fit mx-auto">
-            <AlertCircle className="h-8 w-8 text-red-600" />
+      <div className="bg-gradient-to-br from-red-50 to-red-100 border border-red-200/50 rounded-lg p-4 shadow-md">
+        <div className="text-center space-y-3">
+          <div className="p-2 bg-red-100 rounded-full w-fit mx-auto">
+            <AlertCircle className="h-6 w-6 text-red-600" />
           </div>
           <div>
-            <h3 className="text-red-800 font-semibold text-lg mb-2">Weather Service Unavailable</h3>
-            <p className="text-red-600 text-sm leading-relaxed max-w-md mx-auto">{error}</p>
+            <h3 className="text-red-800 font-semibold text-base mb-1">Weather Service Unavailable</h3>
+            <p className="text-red-600 text-xs leading-relaxed max-w-md mx-auto">{error}</p>
             <button 
               onClick={fetchWeatherData}
-              className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium"
+              className="mt-3 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors text-xs font-medium"
             >
               Try Again
             </button>
@@ -70,7 +70,7 @@ export default function WeatherDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {weatherData && (
         <>
           {/* Current Weather with Integrated Forecast */}
@@ -85,4 +85,3 @@ export default function WeatherDashboard() {
     </div>
   );
 }
-           

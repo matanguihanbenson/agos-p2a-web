@@ -116,70 +116,70 @@ export default function ForecastCard({ forecast }: ForecastCardProps) {
   };
 
   return (
-    <Card className="shadow-xl bg-white/95 backdrop-blur-sm border-0">
-      <CardHeader className="border-b border-slate-100/50 pb-3">
+    <Card className="shadow-lg bg-white/95 backdrop-blur-sm border-0">
+      <CardHeader className="border-b border-slate-100/50 pb-2">
         <div className="flex items-center space-x-2">
-          <div className="p-1.5 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg">
-            <Calendar className="h-4 w-4 text-blue-600" />
+          <div className="p-1 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-md">
+            <Calendar className="h-3 w-3 text-blue-600" />
           </div>
           <div>
-            <CardTitle className="text-lg text-slate-800">3-Day Forecast</CardTitle>
-            <p className="text-xs text-slate-600 mt-0.5">Tap to view hourly details</p>
+            <CardTitle className="text-sm text-slate-800">3-Day Forecast</CardTitle>
+            <p className="text-xs text-slate-600">Tap for hourly details</p>
           </div>
         </div>
       </CardHeader>
       
-      <CardContent className="p-4">
-        <div className="space-y-2">
+      <CardContent className="p-2">
+        <div className="space-y-1">
           {forecast.dailyForecasts.map((day: DailyForecast, index: number) => (
             <div key={day.date} className="group">
-              {/* Daily Summary - Compact */}
+              {/* Daily Summary - More Compact */}
               <div 
-                className="p-3 rounded-lg border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 transition-all duration-200 cursor-pointer"
+                className="p-2 rounded-md border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 transition-all duration-200 cursor-pointer"
                 onClick={() => toggleDayExpansion(index)}
               >
                 <div className="flex items-center justify-between">
                   {/* Left: Date & Weather */}
-                  <div className="flex items-center space-x-3 flex-1">
-                    <div className="text-center min-w-[60px]">
-                      <div className="font-semibold text-slate-800 text-sm">{formatDate(day.date)}</div>
+                  <div className="flex items-center space-x-2 flex-1">
+                    <div className="text-center min-w-[50px]">
+                      <div className="font-semibold text-slate-800 text-xs">{formatDate(day.date)}</div>
                       <div className="text-xs text-slate-500">
                         {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-2">
-                      <div className={`p-2 ${getWeatherIconBackground(day.condition)} rounded-md group-hover:scale-105 transition-all duration-200`}>
-                        {getWeatherIcon(day.condition, 'h-4 w-4')}
+                    <div className="flex items-center space-x-1.5">
+                      <div className={`p-1.5 ${getWeatherIconBackground(day.condition)} rounded-md group-hover:scale-105 transition-all duration-200`}>
+                        {getWeatherIcon(day.condition, 'h-3 w-3')}
                       </div>
                       <div>
-                        <div className="font-medium text-slate-800 text-sm">{day.condition}</div>
-                        <div className="text-xs text-slate-500">Hourly details</div>
+                        <div className="font-medium text-slate-800 text-xs">{day.condition}</div>
+                        <div className="text-xs text-slate-500">Hourly</div>
                       </div>
                     </div>
                   </div>
                   
                   {/* Right: Temperature & Precipitation */}
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2">
                     <div className="text-right">
-                      <div className="flex items-baseline space-x-1">
-                        <span className="text-lg font-bold text-slate-800">{Math.round(day.maxTemp)}°</span>
-                        <span className="text-sm text-slate-500">/{Math.round(day.minTemp)}°</span>
+                      <div className="flex items-baseline space-x-0.5">
+                        <span className="text-sm font-bold text-slate-800">{Math.round(day.maxTemp)}°</span>
+                        <span className="text-xs text-slate-500">/{Math.round(day.minTemp)}°</span>
                       </div>
                     </div>
                     
-                    <div className={`px-2 py-1 rounded-full ${getPrecipitationColor(day.precipitationChance)} min-w-[50px] text-center`}>
-                      <div className="flex items-center justify-center space-x-1">
-                        <Droplets className="h-2.5 w-2.5" />
+                    <div className={`px-1.5 py-0.5 rounded-full ${getPrecipitationColor(day.precipitationChance)} min-w-[40px] text-center`}>
+                      <div className="flex items-center justify-center space-x-0.5">
+                        <Droplets className="h-2 w-2" />
                         <span className="text-xs font-medium">{day.precipitationChance}%</span>
                       </div>
                     </div>
                     
                     <div className="p-0.5">
                       {expandedDay === index ? (
-                        <ChevronUp className="h-4 w-4 text-slate-400" />
+                        <ChevronUp className="h-3 w-3 text-slate-400" />
                       ) : (
-                        <ChevronDown className="h-4 w-4 text-slate-400" />
+                        <ChevronDown className="h-3 w-3 text-slate-400" />
                       )}
                     </div>
                   </div>
@@ -188,33 +188,33 @@ export default function ForecastCard({ forecast }: ForecastCardProps) {
               
               {/* Hourly Breakdown - More Compact */}
               {expandedDay === index && (
-                <div className="mt-2 p-3 bg-gradient-to-br from-slate-50 to-blue-50 rounded-lg border border-blue-100">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-semibold text-slate-800">
+                <div className="mt-1 p-2 bg-gradient-to-br from-slate-50 to-blue-50 rounded-md border border-blue-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-semibold text-slate-800">
                       {formatDate(day.date)} - 24h
                     </h4>
                     <div className="text-xs text-slate-600">
-                      Temp & rain by hour
+                      Temp & rain
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-12 gap-2 max-h-40 overflow-y-auto">
+                  <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-12 gap-1 max-h-32 overflow-y-auto">
                     {day.hourlyForecasts.map((hour: HourlyForecast, hourIndex: number) => (
-                      <div key={hourIndex} className="bg-white rounded-md p-2 shadow-sm border border-white/50 hover:shadow-sm transition-all">
-                        <div className="text-center space-y-1">
+                      <div key={hourIndex} className="bg-white rounded-md p-1.5 shadow-sm border border-white/50 hover:shadow-sm transition-all">
+                        <div className="text-center space-y-0.5">
                           <div className="text-xs font-medium text-slate-700">
                             {hour.time.replace(':00', '')}
                           </div>
                           
-                          <div className={`flex justify-center p-1 rounded ${getWeatherIconBackground(hour.condition)}`}>
-                            {getWeatherIcon(hour.condition, 'h-3 w-3')}
+                          <div className={`flex justify-center p-0.5 rounded ${getWeatherIconBackground(hour.condition)}`}>
+                            {getWeatherIcon(hour.condition, 'h-2.5 w-2.5')}
                           </div>
                           
                           <div className="text-xs font-bold text-slate-800">
                             {Math.round(hour.temperature)}°
                           </div>
                           
-                          <div className={`text-xs px-1.5 py-0.5 rounded-full ${getPrecipitationColor(hour.precipitationChance)}`}>
+                          <div className={`text-xs px-1 py-0.5 rounded-full ${getPrecipitationColor(hour.precipitationChance)}`}>
                             {hour.precipitationChance}%
                           </div>
                         </div>
@@ -227,25 +227,25 @@ export default function ForecastCard({ forecast }: ForecastCardProps) {
           ))}
         </div>
         
-        {/* Compact Quick Summary */}
-        <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+        {/* More Compact Quick Summary */}
+        <div className="mt-2 p-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-md border border-blue-100">
           <div className="text-center">
-            <div className="text-xs font-medium text-slate-700 mb-2">3-Day Overview</div>
+            <div className="text-xs font-medium text-slate-700 mb-1">3-Day Overview</div>
             <div className="flex justify-center space-x-4 text-xs text-slate-600">
               <div className="text-center">
-                <div className="font-semibold text-slate-800 text-sm">
+                <div className="font-semibold text-slate-800 text-xs">
                   {Math.round(Math.max(...forecast.dailyForecasts.map(d => d.maxTemp)))}°C
                 </div>
                 <div>High</div>
               </div>
               <div className="text-center">
-                <div className="font-semibold text-slate-800 text-sm">
+                <div className="font-semibold text-slate-800 text-xs">
                   {Math.round(Math.min(...forecast.dailyForecasts.map(d => d.minTemp)))}°C
                 </div>
                 <div>Low</div>
               </div>
               <div className="text-center">
-                <div className="font-semibold text-slate-800 text-sm">
+                <div className="font-semibold text-slate-800 text-xs">
                   {Math.round(forecast.dailyForecasts.reduce((sum, d) => sum + d.precipitationChance, 0) / forecast.dailyForecasts.length)}%
                 </div>
                 <div>Rain</div>

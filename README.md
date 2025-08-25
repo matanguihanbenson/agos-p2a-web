@@ -20,14 +20,14 @@
 
 ### 🌐 **Published Project Available for Testing**
 
-We've deployed AGOS and it's ready for you to explore! 
+We've deployed AGOS and it's ready for you to explore!
 
 **🔗 [Access Live Demo](https://p2a-agos-web.vercel.app/)**
 
 ### 🔐 **Test Account Credentials**
 
-| Role | Email | Password |
-|------|--------|----------|
+| Role         | Email             | Password   |
+| ------------ | ----------------- | ---------- |
 | 👤 **Admin** | `admin@gmail.com` | `12345678` |
 
 > 💡 **Tip**: Use the admin account to explore all features including bot management, user administration, and analytics dashboards.
@@ -77,13 +77,13 @@ We've deployed AGOS and it's ready for you to explore!
 
 <div align="center">
 
-| Category | Technologies |
-|----------|-------------|
+| Category        | Technologies                                           |
+| --------------- | ------------------------------------------------------ |
 | **🖥️ Frontend** | Next.js 15.3.5, React 19, TypeScript, Tailwind CSS 4.0 |
-| **🎨 UI/UX** | Radix UI, Lucide React, Recharts |
-| **🗺️ Maps** | Leaflet, OpenStreetMap |
-| **🔐 Backend** | Firebase Auth, Cloud Firestore, Realtime Database |
-| **☁️ Storage** | Firebase Storage |
+| **🎨 UI/UX**    | Radix UI, Lucide React, Recharts                       |
+| **🗺️ Maps**     | Leaflet, OpenStreetMap                                 |
+| **🔐 Backend**  | Firebase Auth, Cloud Firestore, Realtime Database      |
+| **☁️ Storage**  | Firebase Storage                                       |
 
 </div>
 

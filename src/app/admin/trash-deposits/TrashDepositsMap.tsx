@@ -297,7 +297,7 @@ const TrashDepositsMap: React.FC<TrashDepositsMapProps> = ({
                 </div>
 
                 <div style="margin-bottom: 8px; padding: 6px; background-color: #eff6ff; border-radius: 4px;">
-                  <h4 style="margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: #1d4ed8;">📊 Detailed Breakdown</h4>
+                  <h4 style="margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: #1d4ed8;">Detailed Breakdown</h4>
                   <div style="font-size: 11px; color: #1e40af; line-height: 1.3;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 6px;">
                       <div style="display: flex; justify-content: space-between;">
