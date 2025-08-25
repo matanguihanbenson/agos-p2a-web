@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import Head from 'next/head';
 import { 
   VideoOff, 
   Volume2, 
@@ -22,7 +21,36 @@ import {
   Loader2
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useBots } from '@/hooks/useBots';
+import { useBots, Bot } from '@/hooks/useBots';
+
+interface HlsInstance {
+  loadSource: (url: string) => void;
+  attachMedia: (video: HTMLVideoElement) => void;
+  on: (event: string, callback: (...args: unknown[]) => void) => void;
+  destroy: () => void;
+  startLoad: () => void;
+  recoverMediaError: () => void;
+}
+
+interface HlsConstructor {
+  new (config: Record<string, unknown>): HlsInstance;
+  isSupported: () => boolean;
+  Events: {
+    MANIFEST_PARSED: string;
+    ERROR: string;
+    FRAG_LOADED: string;
+  };
+  ErrorTypes: {
+    NETWORK_ERROR: string;
+    MEDIA_ERROR: string;
+  };
+}
+
+declare global {
+  interface Window {
+    Hls?: HlsConstructor;
+  }
+}
 
 export default function LiveVideoViewer() {
   const [selectedBot, setSelectedBot] = useState<string>('');
@@ -36,6 +64,7 @@ export default function LiveVideoViewer() {
   const [hlsError, setHlsError] = useState<string | null>(null);
   const [hlsLoaded, setHlsLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsRef = useRef<HlsInstance | null>(null);
 
   const { user, loading: authLoading } = useAuth();
   const { bots, loading: botsLoading, error } = useBots(user?.uid || null);
@@ -84,37 +113,35 @@ export default function LiveVideoViewer() {
     }
   };
 
-  const isOnline = (bot: any) => {
+  const isOnline = (bot: Bot | undefined) => {
     return bot?.stream_url && bot?.stream_url.trim() !== '';
   };
 
   // Load HLS.js dynamically
   useEffect(() => {
     const loadHlsJs = async () => {
-      if (typeof window !== 'undefined') {
-        // Check if HLS.js is already loaded
-        if ('Hls' in window) {
-          setHlsLoaded(true);
-          return;
-        }
+      // Check if HLS.js is already loaded
+      if ('Hls' in window) {
+        setHlsLoaded(true);
+        return;
+      }
 
-        try {
-          // Dynamically import HLS.js
-          const script = document.createElement('script');
-          script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
-          script.onload = () => {
-            console.log('HLS.js loaded successfully');
-            setHlsLoaded(true);
-          };
-          script.onerror = () => {
-            console.error('Failed to load HLS.js');
-            setHlsError('Failed to load HLS.js library');
-          };
-          document.head.appendChild(script);
-        } catch (error) {
-          console.error('Error loading HLS.js:', error);
-          setHlsError('Error loading HLS.js library');
-        }
+      try {
+        // Dynamically import HLS.js
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
+        script.onload = () => {
+          console.log('HLS.js loaded successfully');
+          setHlsLoaded(true);
+        };
+        script.onerror = () => {
+          console.error('Failed to load HLS.js');
+          setHlsError('Failed to load HLS.js library');
+        };
+        document.head.appendChild(script);
+      } catch (error) {
+        console.error('Error loading HLS.js:', error);
+        setHlsError('Error loading HLS.js library');
       }
     };
 
@@ -128,6 +155,12 @@ export default function LiveVideoViewer() {
     const video = videoRef.current;
     const streamUrl = currentBot.stream_url;
     
+    // Cleanup previous HLS instance
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+    
     // Reset errors
     setVideoError(null);
     setHlsError(null);
@@ -135,13 +168,13 @@ export default function LiveVideoViewer() {
     console.log('Loading stream:', streamUrl);
 
     // Check if HLS.js is available and supported
-    if (typeof window !== 'undefined' && 'Hls' in window) {
-      const Hls = (window as any).Hls;
+    if ('Hls' in window && window.Hls) {
+      const Hls = window.Hls;
       if (Hls.isSupported()) {
         console.log('Using HLS.js for playback');
         const hls = new Hls({
           enableWorker: false,
-          xhrSetup: function (xhr: XMLHttpRequest, url: string) {
+          xhrSetup: function (xhr: XMLHttpRequest) {
             // Add CORS headers for ngrok and general CORS handling
             xhr.setRequestHeader('ngrok-skip-browser-warning', 'true');
             xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
@@ -159,20 +192,19 @@ export default function LiveVideoViewer() {
           fragLoadingRetryDelay: 1000,
         });
 
+        // Store reference for cleanup
+        hlsRef.current = hls;
+
         hls.loadSource(streamUrl);
         hls.attachMedia(video);
         
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           console.log('HLS manifest parsed successfully');
-          if (isPlaying) {
-            video.play().catch((error) => {
-              console.error('Video play error:', error);
-              setVideoError(`Playback error: ${error.message}`);
-            });
-          }
+          // Don't auto-play here, let the video controls handle it
         });
 
-        hls.on(Hls.Events.ERROR, (_: any, data: any) => {
+        hls.on(Hls.Events.ERROR, (...args: unknown[]) => {
+          const data = args[1] as { fatal: boolean; type: string; details: string };
           console.error('HLS error:', data);
           
           if (data.fatal) {
@@ -183,18 +215,25 @@ export default function LiveVideoViewer() {
                 // Try to recover
                 setTimeout(() => {
                   console.log('Attempting to recover from network error...');
-                  hls.startLoad();
+                  if (hlsRef.current) {
+                    hlsRef.current.startLoad();
+                  }
                 }, 2000);
                 break;
               case Hls.ErrorTypes.MEDIA_ERROR:
                 console.log('Fatal media error, trying to recover...');
                 setHlsError(`Media Error: ${data.details}`);
-                hls.recoverMediaError();
+                if (hlsRef.current) {
+                  hlsRef.current.recoverMediaError();
+                }
                 break;
               default:
                 console.log('Fatal error, cannot recover');
                 setHlsError(`Fatal Error: ${data.type} - ${data.details}`);
-                hls.destroy();
+                if (hlsRef.current) {
+                  hlsRef.current.destroy();
+                  hlsRef.current = null;
+                }
                 break;
             }
           } else {
@@ -206,13 +245,14 @@ export default function LiveVideoViewer() {
         hls.on(Hls.Events.FRAG_LOADED, () => {
           console.log('Fragment loaded successfully');
           // Clear any previous errors if fragments are loading
-          if (hlsError && !hlsError.includes('Fatal')) {
-            setHlsError(null);
-          }
+          setHlsError(null);
         });
         
         return () => {
-          hls.destroy();
+          if (hlsRef.current) {
+            hlsRef.current.destroy();
+            hlsRef.current = null;
+          }
         };
       } else {
         console.log('HLS.js not supported, trying native HLS');
@@ -223,18 +263,28 @@ export default function LiveVideoViewer() {
     // Fallback: Try direct iframe embed for ngrok streams
     console.log('Trying iframe fallback for ngrok stream');
     
-  }, [currentBot?.stream_url, isPlaying, hlsLoaded]);
+  }, [currentBot?.stream_url, hlsLoaded]);
 
-  // Control video playback
+  // Control video playback separately
   useEffect(() => {
     if (!videoRef.current) return;
     
+    const video = videoRef.current;
+    
     if (isPlaying) {
-      videoRef.current.play().catch(console.error);
+      // Add a small delay to ensure HLS is ready
+      const playTimeout = setTimeout(() => {
+        video.play().catch((error) => {
+          console.error('Video play error:', error);
+          setVideoError(`Playback error: ${error.message}`);
+        });
+      }, 100);
+      
+      return () => clearTimeout(playTimeout);
     } else {
-      videoRef.current.pause();
+      video.pause();
     }
-  }, [isPlaying]);
+  }, [isPlaying, currentBot?.stream_url]); // Add currentBot dependency to restart playback on bot change
 
   // Control video mute
   useEffect(() => {
@@ -303,338 +353,353 @@ export default function LiveVideoViewer() {
   }
 
   return (
-    <>
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <div className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Live Video Viewer</h1>
-                <p className="text-gray-600 text-sm">Monitor onboard cameras from AGOS bots in real-time</p>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <button 
-                  onClick={() => setIsRecording(!isRecording)}
-                  className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    isRecording 
-                      ? 'bg-red-600 text-white hover:bg-red-700' 
-                      : 'bg-gray-600 text-white hover:bg-gray-700'
-                  }`}
-                >
-                  <Circle className="h-3 w-3 mr-1" />
-                  {isRecording ? 'Stop Recording' : 'Start Recording'}
-                </button>
-                <button className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">
-                  <Download className="h-3 w-3 mr-1" />
-                  Export Stream
-                </button>
-              </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Live Video Viewer</h1>
+              <p className="text-gray-600 text-sm">Monitor onboard cameras from AGOS bots in real-time</p>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <button 
+                onClick={() => setIsRecording(!isRecording)}
+                className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  isRecording 
+                    ? 'bg-red-600 text-white hover:bg-red-700' 
+                    : 'bg-gray-600 text-white hover:bg-gray-700'
+                }`}
+              >
+                <Circle className="h-3 w-3 mr-1" />
+                {isRecording ? 'Stop Recording' : 'Start Recording'}
+              </button>
+              <button className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">
+                <Download className="h-3 w-3 mr-1" />
+                Export Stream
+              </button>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            {/* Main Video Player */}
-            <div className="lg:col-span-3">
-              <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-                <div className="p-3 border-b border-gray-200">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-2">
-                      <div className={`w-2 h-2 rounded-full ${getStatusDot(currentBot?.realtimeData?.status || currentBot?.status || 'offline')} animate-pulse`}></div>
-                      <div>
-                        <h3 className="text-base font-semibold text-gray-900">{currentBot?.name}</h3>
-                        <div className="flex items-center space-x-3 text-xs text-gray-600">
-                          <span>{currentBot?.id}</span>
-                          <span>•</span>
-                          <span>{currentBot?.location}</span>
-                          <span>•</span>
-                          <span className={getStatusColor(currentBot?.realtimeData?.status || currentBot?.status || 'offline')}>
-                            {currentBot?.realtimeData?.status || currentBot?.status || 'offline'}
-                          </span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          {/* Main Video Player */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+              <div className="p-3 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-2 h-2 rounded-full ${getStatusDot(currentBot?.realtimeData?.status || currentBot?.status || 'offline')} animate-pulse`}></div>
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-900">{currentBot?.name}</h3>
+                      <div className="flex items-center space-x-3 text-xs text-gray-600">
+                        <span>{currentBot?.id}</span>
+                        <span>•</span>
+                        <span>{currentBot?.location}</span>
+                        <span>•</span>
+                        <span className={getStatusColor(currentBot?.realtimeData?.status || currentBot?.status || 'offline')}>
+                          {currentBot?.realtimeData?.status || currentBot?.status || 'offline'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    {isRecording && (
+                      <div className="flex items-center space-x-1 text-red-600">
+                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
+                        <span className="text-xs font-medium">REC</span>
+                      </div>
+                    )}
+                    <span className="text-xs text-gray-600">{currentBot?.streamQuality}</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Video Player */}
+              <div className="relative bg-black aspect-video">
+                {isOnline(currentBot) ? (
+                  <div className="absolute inset-0">
+                    {/* Try video element first */}
+                    <video
+                      ref={videoRef}
+                      className="w-full h-full object-cover"
+                      controls={false}
+                      autoPlay={false} // Disable autoplay, let useEffect handle it
+                      muted={isMuted}
+                      playsInline
+                      crossOrigin="anonymous"
+                      onError={(e) => {
+                        console.error('Video element error:', e);
+                        const target = e.target as HTMLVideoElement;
+                        setVideoError(`Video error: ${target.error?.message || 'Unknown error'}`);
+                      }}
+                      onLoadStart={() => {
+                        console.log('Video load started');
+                      }}
+                      onLoadedMetadata={() => {
+                        console.log('Video metadata loaded');
+                      }}
+                      onCanPlay={() => {
+                        console.log('Video can play');
+                      }}
+                      onPlay={() => {
+                        console.log('Video started playing');
+                        setVideoError(null);
+                      }}
+                      onPause={() => {
+                        console.log('Video paused');
+                      }}
+                      onEnded={() => {
+                        console.log('Video ended');
+                      }}
+                      onStalled={() => {
+                        console.log('Video stalled');
+                      }}
+                      onWaiting={() => {
+                        console.log('Video waiting for data');
+                      }}
+                    />
+                    
+                    {/* Fallback iframe for ngrok streams */}
+                    {(videoError || hlsError) && currentBot?.stream_url?.includes('ngrok') && (
+                      <div className="absolute inset-0 bg-black">
+                        <iframe
+                          src={currentBot.stream_url}
+                          className="w-full h-full border-0"
+                          allow="autoplay; fullscreen"
+                          title="Live Stream"
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Error overlay - only show if both video and iframe fail */}
+                    {(videoError || hlsError) && !currentBot?.stream_url?.includes('ngrok') && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+                        <div className="text-center text-white p-4 max-w-md">
+                          <VideoOff className="h-12 w-12 mx-auto mb-2" />
+                          <p className="text-sm font-medium mb-2">Stream Error</p>
+                          <p className="text-xs opacity-80 mb-3">{videoError || hlsError}</p>
+                          <div className="space-y-2">
+                            <button 
+                              onClick={() => {
+                                setVideoError(null);
+                                setHlsError(null);
+                                // Force reload HLS
+                                if (hlsRef.current && currentBot?.stream_url) {
+                                  hlsRef.current.destroy();
+                                  hlsRef.current = null;
+                                  // Trigger re-creation by updating a dependency
+                                  setHlsLoaded(false);
+                                  setTimeout(() => setHlsLoaded(true), 100);
+                                } else if (videoRef.current) {
+                                  videoRef.current.load();
+                                }
+                              }}
+                              className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 mr-2"
+                            >
+                              Retry
+                            </button>
+                            <button 
+                              onClick={() => {
+                                // Try opening stream in new tab
+                                window.open(currentBot?.stream_url, '_blank');
+                              }}
+                              className="px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700"
+                            >
+                              Open in New Tab
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Timestamp overlay */}
+                    <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                      LIVE • {currentTime}
+                    </div>
+                    
+                    {/* Bot info overlay */}
+                    <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-1">
+                          <Battery className="h-3 w-3" />
+                          <span>{currentBot?.battery}%</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Wifi className="h-3 w-3" />
+                          <span>{currentBot?.signal}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <MapPin className="h-3 w-3" />
+                          <span>GPS Active</span>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-2">
-                      {isRecording && (
-                        <div className="flex items-center space-x-1 text-red-600">
-                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
-                          <span className="text-xs font-medium">REC</span>
-                        </div>
-                      )}
-                      <span className="text-xs text-gray-600">{currentBot?.streamQuality}</span>
+                    {/* Enhanced Stream URL display for debugging */}
+                    <div className="absolute bottom-10 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded max-w-md">
+                      <div>Stream: {currentBot?.stream_url}</div>
+                      <div>HLS.js Loaded: {hlsLoaded ? 'Yes' : 'No'}</div>
+                      <div>HLS.js Available: {'Hls' in window ? 'Yes' : 'No'}</div>
+                      <div>HLS.js Supported: {'Hls' in window && window.Hls?.isSupported() ? 'Yes' : 'No'}</div>
+                      <div>Native HLS: {videoRef.current?.canPlayType('application/vnd.apple.mpegurl') || 'No'}</div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center text-gray-400">
+                      <VideoOff className="h-12 w-12 mx-auto mb-2" />
+                      <p className="text-sm font-medium">Camera Offline</p>
+                      <p className="text-xs">
+                        {currentBot?.stream_url 
+                          ? 'Stream URL available but video not loading' 
+                          : 'No stream URL available'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                )}
                 
-                {/* Video Player */}
-                <div className="relative bg-black aspect-video">
-                  {isOnline(currentBot) ? (
-                    <div className="absolute inset-0">
-                      {/* Try video element first */}
-                      <video
-                        ref={videoRef}
-                        className="w-full h-full object-cover"
-                        controls={false}
-                        autoPlay
-                        muted={isMuted}
-                        playsInline
-                        crossOrigin="anonymous"
-                        onError={(e) => {
-                          console.error('Video element error:', e);
-                          const target = e.target as HTMLVideoElement;
-                          setVideoError(`Video error: ${target.error?.message || 'Unknown error'}`);
-                        }}
-                        onLoadStart={() => {
-                          console.log('Video load started');
-                        }}
-                        onLoadedMetadata={() => {
-                          console.log('Video metadata loaded');
-                        }}
-                        onCanPlay={() => {
-                          console.log('Video can play');
-                        }}
-                        onPlay={() => {
-                          console.log('Video started playing');
-                          setVideoError(null);
-                        }}
-                      />
-                      
-                      {/* Fallback iframe for ngrok streams */}
-                      {(videoError || hlsError) && currentBot?.stream_url?.includes('ngrok') && (
-                        <div className="absolute inset-0 bg-black">
-                          <iframe
-                            src={currentBot.stream_url}
-                            className="w-full h-full border-0"
-                            allow="autoplay; fullscreen"
-                            title="Live Stream"
-                          />
-                        </div>
-                      )}
-                      
-                      {/* Error overlay - only show if both video and iframe fail */}
-                      {(videoError || hlsError) && !currentBot?.stream_url?.includes('ngrok') && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-                          <div className="text-center text-white p-4 max-w-md">
-                            <VideoOff className="h-12 w-12 mx-auto mb-2" />
-                            <p className="text-sm font-medium mb-2">Stream Error</p>
-                            <p className="text-xs opacity-80 mb-3">{videoError || hlsError}</p>
-                            <div className="space-y-2">
-                              <button 
-                                onClick={() => {
-                                  setVideoError(null);
-                                  setHlsError(null);
-                                  // Force reload
-                                  if (videoRef.current) {
-                                    videoRef.current.load();
-                                  }
-                                }}
-                                className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 mr-2"
-                              >
-                                Retry
-                              </button>
-                              <button 
-                                onClick={() => {
-                                  // Try opening stream in new tab
-                                  window.open(currentBot?.stream_url, '_blank');
-                                }}
-                                className="px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700"
-                              >
-                                Open in New Tab
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Timestamp overlay */}
-                      <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-                        LIVE • {currentTime}
-                      </div>
-                      
-                      {/* Bot info overlay */}
-                      <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-                        <div className="flex items-center space-x-3">
-                          <div className="flex items-center space-x-1">
-                            <Battery className="h-3 w-3" />
-                            <span>{currentBot?.battery}%</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Wifi className="h-3 w-3" />
-                            <span>{currentBot?.signal}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="h-3 w-3" />
-                            <span>GPS Active</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Enhanced Stream URL display for debugging */}
-                      <div className="absolute bottom-10 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded max-w-md">
-                        <div>Stream: {currentBot?.stream_url}</div>
-                        <div>HLS.js Loaded: {hlsLoaded ? 'Yes' : 'No'}</div>
-                        <div>HLS.js Available: {typeof window !== 'undefined' && 'Hls' in window ? 'Yes' : 'No'}</div>
-                        <div>HLS.js Supported: {typeof window !== 'undefined' && 'Hls' in window && (window as any).Hls?.isSupported() ? 'Yes' : 'No'}</div>
-                        <div>Native HLS: {videoRef.current?.canPlayType('application/vnd.apple.mpegurl') || 'No'}</div>
-                        
-                      </div>
+                {/* Video Controls Overlay */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <button 
+                        onClick={() => setIsPlaying(!isPlaying)}
+                        className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors"
+                      >
+                        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                      </button>
+                      <button className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors">
+                        <SkipBack className="h-4 w-4" />
+                      </button>
+                      <button className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors">
+                        <SkipForward className="h-4 w-4" />
+                      </button>
                     </div>
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center text-gray-400">
-                        <VideoOff className="h-12 w-12 mx-auto mb-2" />
-                        <p className="text-sm font-medium">Camera Offline</p>
-                        <p className="text-xs">
-                          {currentBot?.stream_url 
-                            ? 'Stream URL available but video not loading' 
-                            : 'No stream URL available'
-                          }
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Video Controls Overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <button 
-                          onClick={() => setIsPlaying(!isPlaying)}
-                          className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors"
-                        >
-                          {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                        </button>
-                        <button className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors">
-                          <SkipBack className="h-4 w-4" />
-                        </button>
-                        <button className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors">
-                          <SkipForward className="h-4 w-4" />
-                        </button>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <button 
-                          onClick={() => setIsMuted(!isMuted)}
-                          className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors"
-                        >
-                          {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                        </button>
-                        <button className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors">
-                          <Camera className="h-4 w-4" />
-                        </button>
-                        <button className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors">
-                          <RotateCw className="h-4 w-4" />
-                        </button>
-                        <button 
-                          onClick={() => setIsFullscreen(!isFullscreen)}
-                          className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors"
-                        >
-                          {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stream Info */}
-                <div className="p-3 bg-gray-50">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                    <div>
-                      <span className="text-gray-600">Command:</span>
-                      <span className="ml-1 font-medium text-gray-900">{currentBot?.command || 'No command'}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Quality:</span>
-                      <span className="ml-1 font-medium text-gray-900">{currentBot?.streamQuality}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Last Update:</span>
-                      <span className="ml-1 font-medium text-gray-900">{currentBot?.lastUpdate}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Organization:</span>
-                      <span className="ml-1 font-medium text-gray-900">
-                        {currentBot?.organization || 'No organization assigned'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Detection Statistics */}
-                <div className="p-3">
-                  <h3 className="text-base font-semibold text-gray-900 mb-3">Real-time Detection Statistics</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-white rounded-lg shadow-sm border p-4">
-                      <div className="text-xl font-bold text-blue-600">24</div>
-                      <div className="text-xs text-gray-600">Items Detected</div>
-                    </div>
-                    <div className="bg-white rounded-lg shadow-sm border p-4">
-                      <div className="text-xl font-bold text-green-600">18</div>
-                      <div className="text-xs text-gray-600">Successfully Collected</div>
-                    </div>
-                    <div className="bg-white rounded-lg shadow-sm border p-4">
-                      <div className="text-xl font-bold text-yellow-600">6</div>
-                      <div className="text-xs text-gray-600">In Progress</div>
-                    </div>
-                    <div className="bg-white rounded-lg shadow-sm border p-4">
-                      <div className="text-xl font-bold text-purple-600">75%</div>
-                      <div className="text-xs text-gray-600">Success Rate</div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <button 
+                        onClick={() => setIsMuted(!isMuted)}
+                        className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors"
+                      >
+                        {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                      </button>
+                      <button className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors">
+                        <Camera className="h-4 w-4" />
+                      </button>
+                      <button className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors">
+                        <RotateCw className="h-4 w-4" />
+                      </button>
+                      <button 
+                        onClick={() => setIsFullscreen(!isFullscreen)}
+                        className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors"
+                      >
+                        {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                      </button>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Sidebar */}
-            <div className="hidden lg:block">
-              <div className="bg-white rounded-lg shadow-sm border">
-                <div className="p-4 border-b border-gray-200">
-                  <h3 className="text-base font-semibold text-gray-900">Available Cameras ({bots.length})</h3>
+              {/* Stream Info */}
+              <div className="p-3 bg-gray-50">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <span className="text-gray-600">Command:</span>
+                    <span className="ml-1 font-medium text-gray-900">{currentBot?.command || 'No command'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Quality:</span>
+                    <span className="ml-1 font-medium text-gray-900">{currentBot?.streamQuality}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Last Update:</span>
+                    <span className="ml-1 font-medium text-gray-900">{currentBot?.lastUpdate}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Organization:</span>
+                    <span className="ml-1 font-medium text-gray-900">
+                      {currentBot?.organization || 'No organization assigned'}
+                    </span>
+                  </div>
                 </div>
-                <div className="p-4">
-                  <div className="space-y-2">
-                    {bots.map((bot) => (
-                      <button
-                        key={bot.id}
-                        onClick={() => setSelectedBot(bot.id)}
-                        className={`w-full text-left p-2 rounded border transition-colors ${
-                          selectedBot === bot.id
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <div className={`w-2 h-2 rounded-full ${getStatusDot(bot.realtimeData?.status || bot.status)}`}></div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">{bot.id}</p>
-                              <p className="text-xs text-gray-600">{bot.name}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="text-right">
-                            <p className={`text-xs font-medium ${getStatusColor(bot.realtimeData?.status || bot.status)}`}>
-                              {bot.realtimeData?.status || bot.status}
-                            </p>
-                            <div className="flex items-center space-x-1 mt-0.5">
-                              <Battery className="h-2.5 w-2.5 text-gray-400" />
-                              <span className="text-xs text-gray-600">{bot.battery}%</span>
-                            </div>
+              </div>
+
+              {/* Detection Statistics */}
+              <div className="p-3">
+                <h3 className="text-base font-semibold text-gray-900 mb-3">Real-time Detection Statistics</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-lg shadow-sm border p-4">
+                    <div className="text-xl font-bold text-blue-600">24</div>
+                    <div className="text-xs text-gray-600">Items Detected</div>
+                  </div>
+                  <div className="bg-white rounded-lg shadow-sm border p-4">
+                    <div className="text-xl font-bold text-green-600">18</div>
+                    <div className="text-xs text-gray-600">Successfully Collected</div>
+                  </div>
+                  <div className="bg-white rounded-lg shadow-sm border p-4">
+                    <div className="text-xl font-bold text-yellow-600">6</div>
+                    <div className="text-xs text-gray-600">In Progress</div>
+                  </div>
+                  <div className="bg-white rounded-lg shadow-sm border p-4">
+                    <div className="text-xl font-bold text-purple-600">75%</div>
+                    <div className="text-xs text-gray-600">Success Rate</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="hidden lg:block">
+            <div className="bg-white rounded-lg shadow-sm border">
+              <div className="p-4 border-b border-gray-200">
+                <h3 className="text-base font-semibold text-gray-900">Available Cameras ({bots.length})</h3>
+              </div>
+              <div className="p-4">
+                <div className="space-y-2">
+                  {bots.map((bot) => (
+                    <button
+                      key={bot.id}
+                      onClick={() => setSelectedBot(bot.id)}
+                      className={`w-full text-left p-2 rounded border transition-colors ${
+                        selectedBot === bot.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-2 h-2 rounded-full ${getStatusDot(bot.realtimeData?.status || bot.status)}`}></div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{bot.id}</p>
+                            <p className="text-xs text-gray-600">{bot.name}</p>
                           </div>
                         </div>
-                      </button>
-                    ))}
-                  </div>
+                        
+                        <div className="text-right">
+                          <p className={`text-xs font-medium ${getStatusColor(bot.realtimeData?.status || bot.status)}`}>
+                            {bot.realtimeData?.status || bot.status}
+                          </p>
+                          <div className="flex items-center space-x-1 mt-0.5">
+                            <Battery className="h-2.5 w-2.5 text-gray-400" />
+                            <span className="text-xs text-gray-600">{bot.battery}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, DocumentData } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
 import { ref, onValue, off } from 'firebase/database';
 import { db, realtimeDb } from '@/lib/firebase';
 
@@ -16,11 +16,11 @@ export interface Bot {
   organization: string;
   command: string;
   notes: string;
-  created_at: any;
-  updated_at: any;
-  assigned_at?: any;
-  reassigned_at?: any;
-  stream_url?: string; // Add stream_url to the main Bot interface
+  created_at: Timestamp | Date | string;
+  updated_at: Timestamp | Date | string;
+  assigned_at?: Timestamp | Date | string;
+  reassigned_at?: Timestamp | Date | string;
+  stream_url?: string;
   realtimeData?: {
     lat?: number;
     lng?: number;
@@ -52,7 +52,7 @@ export function useBots(adminId: string | null) {
       (snapshot) => {
         const botsData = snapshot.docs.map(doc => ({
           id: doc.data().bot_id,
-          stream_url: doc.data().stream_url, // Get stream_url from Firestore
+          stream_url: doc.data().stream_url,
           ...doc.data()
         })) as Bot[];
 
@@ -62,7 +62,7 @@ export function useBots(adminId: string | null) {
         botsData.forEach((bot) => {
           const realtimeRef = ref(realtimeDb, `bots/${bot.id}`);
           
-          const unsubscribeRealtime = onValue(realtimeRef, (snapshot) => {
+          onValue(realtimeRef, (snapshot) => {
             const realtimeData = snapshot.val();
             
             setBots(prevBots => 
@@ -119,11 +119,22 @@ export function useBots(adminId: string | null) {
   return { bots, loading, error };
 }
 
-function getLastUpdateText(timestamp: any): string {
+function getLastUpdateText(timestamp: Timestamp | Date | string): string {
   if (!timestamp) return 'Unknown';
   
   const now = new Date();
-  const updateTime = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  let updateTime: Date;
+  
+  if (timestamp instanceof Date) {
+    updateTime = timestamp;
+  } else if (typeof timestamp === 'string') {
+    updateTime = new Date(timestamp);
+  } else if ('toDate' in timestamp) {
+    updateTime = timestamp.toDate();
+  } else {
+    return 'Unknown';
+  }
+  
   const diffMs = now.getTime() - updateTime.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMins / 60);
