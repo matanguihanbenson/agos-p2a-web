@@ -23,33 +23,314 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useBots, Bot } from '@/hooks/useBots';
 
-interface HlsInstance {
-  loadSource: (url: string) => void;
-  attachMedia: (video: HTMLVideoElement) => void;
-  on: (event: string, callback: (...args: unknown[]) => void) => void;
-  destroy: () => void;
-  startLoad: () => void;
-  recoverMediaError: () => void;
-}
-
-interface HlsConstructor {
-  new (config: Record<string, unknown>): HlsInstance;
-  isSupported: () => boolean;
-  Events: {
-    MANIFEST_PARSED: string;
-    ERROR: string;
-    FRAG_LOADED: string;
-  };
-  ErrorTypes: {
-    NETWORK_ERROR: string;
-    MEDIA_ERROR: string;
-  };
-}
-
+// Add HLS.js type declaration
 declare global {
   interface Window {
-    Hls?: HlsConstructor;
+    Hls?: {
+      new (config?: HlsConfig): HlsInstance;
+      isSupported(): boolean;
+      Events: {
+        MANIFEST_PARSED: string;
+        ERROR: string;
+        FRAG_LOADED: string;
+      };
+      ErrorTypes: {
+        NETWORK_ERROR: string;
+        MEDIA_ERROR: string;
+      };
+    };
   }
+}
+
+interface HlsConfig {
+  enableWorker?: boolean;
+  lowLatencyMode?: boolean;
+  backBufferLength?: number;
+  maxBufferLength?: number;
+  maxMaxBufferLength?: number;
+  manifestLoadingTimeOut?: number;
+  manifestLoadingMaxRetry?: number;
+  manifestLoadingRetryDelay?: number;
+  levelLoadingTimeOut?: number;
+  levelLoadingMaxRetry?: number;
+  levelLoadingRetryDelay?: number;
+  fragLoadingTimeOut?: number;
+  fragLoadingMaxRetry?: number;
+  fragLoadingRetryDelay?: number;
+}
+
+interface HlsInstance {
+  loadSource(url: string): void;
+  attachMedia(media: HTMLVideoElement): void;
+  on(event: string, callback: (event: string, data: HlsErrorData) => void): void;
+  destroy(): void;
+  startLoad(): void;
+  recoverMediaError(): void;
+}
+
+interface HlsErrorData {
+  fatal: boolean;
+  type: string;
+  details: string;
+}
+
+// Simplified Live Video Player Component
+function SimpleLivePlayer({ streamUrl }: { streamUrl: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hlsLoaded, setHlsLoaded] = useState(false);
+  const hlsRef = useRef<HlsInstance | null>(null);
+
+  // Load HLS.js from CDN
+  useEffect(() => {
+    if ('Hls' in window) {
+      setHlsLoaded(true);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
+    script.onload = () => {
+      console.log('HLS.js loaded from CDN');
+      setHlsLoaded(true);
+    };
+    script.onerror = () => {
+      console.error('Failed to load HLS.js from CDN');
+      setHlsLoaded(true); // Continue without HLS.js
+    };
+    document.head.appendChild(script);
+
+    return () => {
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!videoRef.current || !streamUrl || !hlsLoaded) return;
+
+    setError(null);
+    setIsLoading(true);
+
+    // Cleanup previous HLS instance
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+
+    // If it's HLS (.m3u8), use Hls.js
+    if (streamUrl.endsWith('.m3u8') || streamUrl.includes('m3u8')) {
+      if (window.Hls && window.Hls.isSupported()) {
+        const hls = new window.Hls({
+          enableWorker: false,
+          lowLatencyMode: true,
+          backBufferLength: 90,
+          maxBufferLength: 30,
+          maxMaxBufferLength: 60,
+          manifestLoadingTimeOut: 10000,
+          manifestLoadingMaxRetry: 3,
+          manifestLoadingRetryDelay: 1000,
+          levelLoadingTimeOut: 10000,
+          levelLoadingMaxRetry: 3,
+          levelLoadingRetryDelay: 1000,
+          fragLoadingTimeOut: 20000,
+          fragLoadingMaxRetry: 3,
+          fragLoadingRetryDelay: 1000,
+        });
+
+        hlsRef.current = hls;
+        hls.loadSource(streamUrl);
+        hls.attachMedia(videoRef.current);
+
+        hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
+          console.log('HLS manifest parsed');
+          setIsLoading(false);
+        });
+
+        hls.on(window.Hls.Events.FRAG_LOADED, () => {
+          console.log('Fragment loaded, clearing any previous errors');
+          setError(null);
+        });
+
+        hls.on(window.Hls.Events.ERROR, (_: string, data: HlsErrorData) => {
+          console.error('HLS error', data);
+          
+          if (data.fatal) {
+            switch (data.type) {
+              case window.Hls?.ErrorTypes.NETWORK_ERROR:
+                console.log('Fatal network error, attempting recovery...');
+                setError('Network error - attempting to recover...');
+                setTimeout(() => {
+                  if (hlsRef.current) {
+                    hlsRef.current.startLoad();
+                  }
+                }, 2000);
+                break;
+              
+              case window.Hls?.ErrorTypes.MEDIA_ERROR:
+                console.log('Fatal media error, attempting recovery...');
+                setError('Media error - attempting to recover...');
+                if (hlsRef.current) {
+                  hlsRef.current.recoverMediaError();
+                }
+                break;
+              
+              default:
+                console.log('Fatal error, cannot recover');
+                setError('Stream error: ' + data.details);
+                setIsLoading(false);
+                break;
+            }
+          } else {
+            // Non-fatal errors - handle buffer stalled error specifically
+            if (data.details.includes('bufferStalled')) {
+              console.log('Buffer stalled, attempting to recover...');
+              setError('Buffering issue - recovering...');
+              // Clear error after attempting recovery
+              setTimeout(() => {
+                setError(null);
+                if (hlsRef.current) {
+                  hlsRef.current.startLoad();
+                }
+              }, 3000);
+            } else {
+              console.log('Non-fatal HLS error:', data.details);
+              setError('Stream issue: ' + data.details);
+              // Clear non-fatal errors after a delay
+              setTimeout(() => setError(null), 5000);
+            }
+          }
+        });
+        
+        return () => {
+          if (hlsRef.current) {
+            hlsRef.current.destroy();
+            hlsRef.current = null;
+          }
+        };
+      } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+        // Safari native HLS
+        videoRef.current.src = streamUrl;
+        setIsLoading(false);
+      } else {
+        setError('HLS not supported');
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    // If it's a WHEP (WebRTC) URL
+    if (streamUrl.endsWith('/whep')) {
+      (async () => {
+        try {
+          const pc = new RTCPeerConnection();
+          pc.ontrack = (event) => {
+            if (videoRef.current) {
+              videoRef.current.srcObject = event.streams[0];
+              setIsLoading(false);
+            }
+          };
+
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+
+          const res = await fetch(streamUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/sdp' },
+            body: offer.sdp || '',
+          });
+
+          const answer = await res.text();
+          await pc.setRemoteDescription({ type: 'answer', sdp: answer });
+        } catch (err) {
+          console.error('WebRTC error', err);
+          const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+          setError('WebRTC connection failed: ' + errorMessage);
+          setIsLoading(false);
+        }
+      })();
+      return;
+    }
+
+    // For direct video URLs (MP4, WebM, etc.) or local streams
+    if (videoRef.current) {
+      videoRef.current.src = streamUrl;
+      videoRef.current.load();
+    }
+    
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleLoadStart = () => setIsLoading(false);
+    const handleCanPlay = () => setIsLoading(false);
+    const handleError = () => {
+      setError('Failed to load video stream');
+      setIsLoading(false);
+    };
+    
+    video.addEventListener('loadstart', handleLoadStart);
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('error', handleError);
+    
+    return () => {
+      video.removeEventListener('loadstart', handleLoadStart);
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('error', handleError);
+    };
+  }, [streamUrl, hlsLoaded]);
+
+  // Add retry functionality
+  const retryStream = () => {
+    console.log('Retrying stream...');
+    setError(null);
+    setIsLoading(true);
+    
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+    
+    // Trigger re-initialization
+    setTimeout(() => {
+      if (videoRef.current) {
+        videoRef.current.load();
+      }
+    }, 1000);
+  };
+
+  return (
+    <div className="relative w-full bg-black aspect-video">
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        controls={false}
+        className="w-full h-full object-cover"
+      />
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center text-white bg-black/70">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      )}
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center text-white bg-black/70">
+          <div className="text-center">
+            <VideoOff className="h-12 w-12 mx-auto mb-2" />
+            <p className="text-sm mb-3">{error}</p>
+            <button 
+              onClick={retryStream}
+              className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+            >
+              Retry Stream
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function LiveVideoViewer() {
@@ -60,11 +341,6 @@ export default function LiveVideoViewer() {
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentTime, setCurrentTime] = useState<string>('');
   const [mounted, setMounted] = useState(false);
-  const [videoError, setVideoError] = useState<string | null>(null);
-  const [hlsError, setHlsError] = useState<string | null>(null);
-  const [hlsLoaded, setHlsLoaded] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const hlsRef = useRef<HlsInstance | null>(null);
 
   const { user, loading: authLoading } = useAuth();
   const { bots, loading: botsLoading, error } = useBots(user?.uid || null);
@@ -116,206 +392,6 @@ export default function LiveVideoViewer() {
   const isOnline = (bot: Bot | undefined) => {
     return bot?.stream_url && bot?.stream_url.trim() !== '';
   };
-
-  // Load HLS.js dynamically
-  useEffect(() => {
-    const loadHlsJs = async () => {
-      // Check if HLS.js is already loaded
-      if ('Hls' in window) {
-        setHlsLoaded(true);
-        return;
-      }
-
-      try {
-        // Dynamically import HLS.js
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
-        script.onload = () => {
-          console.log('HLS.js loaded successfully');
-          setHlsLoaded(true);
-        };
-        script.onerror = () => {
-          console.error('Failed to load HLS.js');
-          setHlsError('Failed to load HLS.js library');
-        };
-        document.head.appendChild(script);
-      } catch (error) {
-        console.error('Error loading HLS.js:', error);
-        setHlsError('Error loading HLS.js library');
-      }
-    };
-
-    loadHlsJs();
-  }, []);
-
-  // Handle HLS stream loading
-  useEffect(() => {
-    if (!currentBot?.stream_url || !videoRef.current || !hlsLoaded) return;
-
-    const video = videoRef.current;
-    const streamUrl = currentBot.stream_url;
-    
-    // Cleanup previous HLS instance
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
-    }
-    
-    // Reset errors
-    setVideoError(null);
-    setHlsError(null);
-
-    console.log('Loading stream:', streamUrl);
-
-    // Check if HLS.js is available and supported
-    if ('Hls' in window && window.Hls) {
-      const Hls = window.Hls;
-      if (Hls.isSupported()) {
-        console.log('Using HLS.js for playback');
-        const hls = new Hls({
-          enableWorker: false,
-          xhrSetup: function (xhr: XMLHttpRequest) {
-            // Add CORS headers for ngrok and general CORS handling
-            xhr.setRequestHeader('ngrok-skip-browser-warning', 'true');
-            xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
-            xhr.setRequestHeader('Access-Control-Allow-Headers', 'Range');
-          },
-          // Add retry configuration
-          manifestLoadingTimeOut: 10000,
-          manifestLoadingMaxRetry: 3,
-          manifestLoadingRetryDelay: 1000,
-          levelLoadingTimeOut: 10000,
-          levelLoadingMaxRetry: 3,
-          levelLoadingRetryDelay: 1000,
-          fragLoadingTimeOut: 20000,
-          fragLoadingMaxRetry: 3,
-          fragLoadingRetryDelay: 1000,
-        });
-
-        // Store reference for cleanup
-        hlsRef.current = hls;
-
-        hls.loadSource(streamUrl);
-        hls.attachMedia(video);
-        
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          console.log('HLS manifest parsed successfully');
-          // Don't auto-play here, let the video controls handle it
-        });
-
-        hls.on(Hls.Events.ERROR, (...args: unknown[]) => {
-          const data = args[1] as { fatal: boolean; type: string; details: string };
-          console.error('HLS error:', data);
-          
-          if (data.fatal) {
-            switch (data.type) {
-              case Hls.ErrorTypes.NETWORK_ERROR:
-                console.log('Fatal network error encountered');
-                setHlsError(`Network Error: ${data.details} - Check if the stream URL is accessible`);
-                // Try to recover
-                setTimeout(() => {
-                  console.log('Attempting to recover from network error...');
-                  if (hlsRef.current) {
-                    hlsRef.current.startLoad();
-                  }
-                }, 2000);
-                break;
-              case Hls.ErrorTypes.MEDIA_ERROR:
-                console.log('Fatal media error, trying to recover...');
-                setHlsError(`Media Error: ${data.details}`);
-                if (hlsRef.current) {
-                  hlsRef.current.recoverMediaError();
-                }
-                break;
-              default:
-                console.log('Fatal error, cannot recover');
-                setHlsError(`Fatal Error: ${data.type} - ${data.details}`);
-                if (hlsRef.current) {
-                  hlsRef.current.destroy();
-                  hlsRef.current = null;
-                }
-                break;
-            }
-          } else {
-            // Non-fatal error
-            setHlsError(`Warning: ${data.type} - ${data.details}`);
-          }
-        });
-
-        hls.on(Hls.Events.FRAG_LOADED, () => {
-          console.log('Fragment loaded successfully');
-          // Clear any previous errors if fragments are loading
-          setHlsError(null);
-        });
-        
-        return () => {
-          if (hlsRef.current) {
-            hlsRef.current.destroy();
-            hlsRef.current = null;
-          }
-        };
-      } else {
-        console.log('HLS.js not supported, trying native HLS');
-        setHlsError('HLS.js not supported in this browser');
-      }
-    }
-    
-    // Fallback: Try direct iframe embed for ngrok streams
-    console.log('Trying iframe fallback for ngrok stream');
-    
-  }, [currentBot?.stream_url, hlsLoaded]);
-
-  // Control video playback separately
-  useEffect(() => {
-    if (!videoRef.current) return;
-    
-    const video = videoRef.current;
-    
-    if (isPlaying) {
-      // Add a small delay to ensure HLS is ready
-      const playTimeout = setTimeout(() => {
-        video.play().catch((error) => {
-          console.error('Video play error:', error);
-          setVideoError(`Playback error: ${error.message}`);
-        });
-      }, 100);
-      
-      return () => clearTimeout(playTimeout);
-    } else {
-      video.pause();
-    }
-  }, [isPlaying, currentBot?.stream_url]); // Add currentBot dependency to restart playback on bot change
-
-  // Control video mute
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = isMuted;
-    }
-  }, [isMuted]);
-
-  // Test stream accessibility
-  const testStreamUrl = async (url: string) => {
-    try {
-      const response = await fetch(url, {
-        method: 'HEAD',
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-        },
-      });
-      console.log('Stream URL test:', response.status, response.statusText);
-      return response.ok;
-    } catch (error) {
-      console.error('Stream URL test failed:', error);
-      return false;
-    }
-  };
-
-  // Test stream when bot changes
-  useEffect(() => {
-    if (currentBot?.stream_url) {
-      testStreamUrl(currentBot.stream_url);
-    }
-  }, [currentBot?.stream_url]);
 
   // Show loading state until mounted
   if (!mounted || authLoading || botsLoading) {
@@ -421,102 +497,11 @@ export default function LiveVideoViewer() {
               
               {/* Video Player */}
               <div className="relative bg-black aspect-video">
-                {isOnline(currentBot) ? (
+                {isOnline(currentBot) && currentBot && currentBot.stream_url ? (
                   <div className="absolute inset-0">
-                    {/* Try video element first */}
-                    <video
-                      ref={videoRef}
-                      className="w-full h-full object-cover"
-                      controls={false}
-                      autoPlay={false} // Disable autoplay, let useEffect handle it
-                      muted={isMuted}
-                      playsInline
-                      crossOrigin="anonymous"
-                      onError={(e) => {
-                        console.error('Video element error:', e);
-                        const target = e.target as HTMLVideoElement;
-                        setVideoError(`Video error: ${target.error?.message || 'Unknown error'}`);
-                      }}
-                      onLoadStart={() => {
-                        console.log('Video load started');
-                      }}
-                      onLoadedMetadata={() => {
-                        console.log('Video metadata loaded');
-                      }}
-                      onCanPlay={() => {
-                        console.log('Video can play');
-                      }}
-                      onPlay={() => {
-                        console.log('Video started playing');
-                        setVideoError(null);
-                      }}
-                      onPause={() => {
-                        console.log('Video paused');
-                      }}
-                      onEnded={() => {
-                        console.log('Video ended');
-                      }}
-                      onStalled={() => {
-                        console.log('Video stalled');
-                      }}
-                      onWaiting={() => {
-                        console.log('Video waiting for data');
-                      }}
-                    />
+                    {/* Simplified Live Player */}
+                    <SimpleLivePlayer streamUrl={currentBot.stream_url} />
                     
-                    {/* Fallback iframe for ngrok streams */}
-                    {(videoError || hlsError) && currentBot?.stream_url?.includes('ngrok') && (
-                      <div className="absolute inset-0 bg-black">
-                        <iframe
-                          src={currentBot.stream_url}
-                          className="w-full h-full border-0"
-                          allow="autoplay; fullscreen"
-                          title="Live Stream"
-                        />
-                      </div>
-                    )}
-                    
-                    {/* Error overlay - only show if both video and iframe fail */}
-                    {(videoError || hlsError) && !currentBot?.stream_url?.includes('ngrok') && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-                        <div className="text-center text-white p-4 max-w-md">
-                          <VideoOff className="h-12 w-12 mx-auto mb-2" />
-                          <p className="text-sm font-medium mb-2">Stream Error</p>
-                          <p className="text-xs opacity-80 mb-3">{videoError || hlsError}</p>
-                          <div className="space-y-2">
-                            <button 
-                              onClick={() => {
-                                setVideoError(null);
-                                setHlsError(null);
-                                // Force reload HLS
-                                if (hlsRef.current && currentBot?.stream_url) {
-                                  hlsRef.current.destroy();
-                                  hlsRef.current = null;
-                                  // Trigger re-creation by updating a dependency
-                                  setHlsLoaded(false);
-                                  setTimeout(() => setHlsLoaded(true), 100);
-                                } else if (videoRef.current) {
-                                  videoRef.current.load();
-                                }
-                              }}
-                              className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 mr-2"
-                            >
-                              Retry
-                            </button>
-                            <button 
-                              onClick={() => {
-                                // Try opening stream in new tab
-                                window.open(currentBot?.stream_url, '_blank');
-                              }}
-                              className="px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700"
-                            >
-                              Open in New Tab
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
                     {/* Timestamp overlay */}
                     <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
                       LIVE • {currentTime}
@@ -527,11 +512,11 @@ export default function LiveVideoViewer() {
                       <div className="flex items-center space-x-3">
                         <div className="flex items-center space-x-1">
                           <Battery className="h-3 w-3" />
-                          <span>{currentBot?.battery}%</span>
+                          <span>{currentBot.battery}%</span>
                         </div>
                         <div className="flex items-center space-x-1">
                           <Wifi className="h-3 w-3" />
-                          <span>{currentBot?.signal}</span>
+                          <span>{currentBot.signal}</span>
                         </div>
                         <div className="flex items-center space-x-1">
                           <MapPin className="h-3 w-3" />
@@ -540,13 +525,9 @@ export default function LiveVideoViewer() {
                       </div>
                     </div>
                     
-                    {/* Enhanced Stream URL display for debugging */}
+                    {/* Stream URL display for debugging */}
                     <div className="absolute bottom-10 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded max-w-md">
-                      <div>Stream: {currentBot?.stream_url}</div>
-                      <div>HLS.js Loaded: {hlsLoaded ? 'Yes' : 'No'}</div>
-                      <div>HLS.js Available: {'Hls' in window ? 'Yes' : 'No'}</div>
-                      <div>HLS.js Supported: {'Hls' in window && window.Hls?.isSupported() ? 'Yes' : 'No'}</div>
-                      <div>Native HLS: {videoRef.current?.canPlayType('application/vnd.apple.mpegurl') || 'No'}</div>
+                      <div>Stream: {currentBot.stream_url}</div>
                     </div>
                   </div>
                 ) : (
