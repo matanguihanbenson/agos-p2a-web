@@ -23,81 +23,63 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useBots, Bot } from '@/hooks/useBots';
 
-// Add HLS.js type declaration
+// Add OvenPlayer type declaration
 declare global {
   interface Window {
-    Hls?: {
-      new (config?: HlsConfig): HlsInstance;
-      isSupported(): boolean;
-      Events: {
-        MANIFEST_PARSED: string;
-        ERROR: string;
-        FRAG_LOADED: string;
-      };
-      ErrorTypes: {
-        NETWORK_ERROR: string;
-        MEDIA_ERROR: string;
-      };
+    OvenPlayer?: {
+      create: (elementId: string, config: OvenPlayerConfig) => OvenPlayerInstance;
     };
   }
 }
 
-interface HlsConfig {
-  enableWorker?: boolean;
-  lowLatencyMode?: boolean;
-  backBufferLength?: number;
-  maxBufferLength?: number;
-  maxMaxBufferLength?: number;
-  manifestLoadingTimeOut?: number;
-  manifestLoadingMaxRetry?: number;
-  manifestLoadingRetryDelay?: number;
-  levelLoadingTimeOut?: number;
-  levelLoadingMaxRetry?: number;
-  levelLoadingRetryDelay?: number;
-  fragLoadingTimeOut?: number;
-  fragLoadingMaxRetry?: number;
-  fragLoadingRetryDelay?: number;
+interface OvenPlayerConfig {
+  sources: Array<{
+    type: string;
+    file: string;
+  }>;
+  autoStart?: boolean;
+  mute?: boolean;
+  controls?: boolean;
 }
 
-interface HlsInstance {
-  loadSource(url: string): void;
-  attachMedia(media: HTMLVideoElement): void;
-  on(event: string, callback: (event: string, data: HlsErrorData) => void): void;
-  destroy(): void;
-  startLoad(): void;
-  recoverMediaError(): void;
+interface OvenPlayerInstance {
+  play: () => void;
+  pause: () => void;
+  remove: () => void;
+  mute: () => void;
+  unmute: () => void;
+  on: (event: string, callback: () => void) => void;
 }
 
-interface HlsErrorData {
-  fatal: boolean;
-  type: string;
-  details: string;
-}
-
-// Simplified Live Video Player Component
-function SimpleLivePlayer({ streamUrl }: { streamUrl: string }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+// OvenPlayer Video Component
+function OvenPlayerVideo({ streamUrl, isPlaying, onPlayStateChange }: { 
+  streamUrl: string; 
+  isPlaying: boolean;
+  onPlayStateChange: (playing: boolean) => void;
+}) {
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+  const playerInstanceRef = useRef<OvenPlayerInstance | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [hlsLoaded, setHlsLoaded] = useState(false);
-  const hlsRef = useRef<HlsInstance | null>(null);
+  const [ovenPlayerLoaded, setOvenPlayerLoaded] = useState(false);
 
-  // Load HLS.js from CDN
+  // Load OvenPlayer from CDN
   useEffect(() => {
-    if ('Hls' in window) {
-      setHlsLoaded(true);
+    if ('OvenPlayer' in window) {
+      setOvenPlayerLoaded(true);
       return;
     }
 
     const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
+    script.src = 'https://cdn.jsdelivr.net/npm/ovenplayer/dist/ovenplayer.min.js';
     script.onload = () => {
-      console.log('HLS.js loaded from CDN');
-      setHlsLoaded(true);
+      console.log('OvenPlayer loaded from CDN');
+      setOvenPlayerLoaded(true);
     };
     script.onerror = () => {
-      console.error('Failed to load HLS.js from CDN');
-      setHlsLoaded(true); // Continue without HLS.js
+      console.error('Failed to load OvenPlayer from CDN');
+      setError('Failed to load OvenPlayer library');
+      setIsLoading(false);
     };
     document.head.appendChild(script);
 
@@ -108,213 +90,146 @@ function SimpleLivePlayer({ streamUrl }: { streamUrl: string }) {
     };
   }, []);
 
+  // Initialize OvenPlayer when ready
   useEffect(() => {
-    if (!videoRef.current || !streamUrl || !hlsLoaded) return;
+    if (!ovenPlayerLoaded || !streamUrl || !playerContainerRef.current) return;
+
+    // Cleanup previous player instance
+    if (playerInstanceRef.current) {
+      try {
+        playerInstanceRef.current.remove();
+      } catch (err) {
+        console.error('Error removing previous player:', err);
+      }
+      playerInstanceRef.current = null;
+    }
+
+    // Clear container
+    if (playerContainerRef.current) {
+      playerContainerRef.current.innerHTML = '';
+    }
 
     setError(null);
     setIsLoading(true);
 
-    // Cleanup previous HLS instance
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
-    }
+    try {
+      // Create unique player ID
+      const playerId = `oven-player-${Date.now()}`;
+      
+      // Create player div
+      const playerDiv = document.createElement('div');
+      playerDiv.id = playerId;
+      playerDiv.style.width = '100%';
+      playerDiv.style.height = '100%';
+      playerContainerRef.current?.appendChild(playerDiv);
 
-    // If it's HLS (.m3u8), use Hls.js
-    if (streamUrl.endsWith('.m3u8') || streamUrl.includes('m3u8')) {
-      if (window.Hls && window.Hls.isSupported()) {
-        const hls = new window.Hls({
-          enableWorker: false,
-          lowLatencyMode: true,
-          backBufferLength: 90,
-          maxBufferLength: 30,
-          maxMaxBufferLength: 60,
-          manifestLoadingTimeOut: 10000,
-          manifestLoadingMaxRetry: 3,
-          manifestLoadingRetryDelay: 1000,
-          levelLoadingTimeOut: 10000,
-          levelLoadingMaxRetry: 3,
-          levelLoadingRetryDelay: 1000,
-          fragLoadingTimeOut: 20000,
-          fragLoadingMaxRetry: 3,
-          fragLoadingRetryDelay: 1000,
-        });
+      // Determine source type and format URL
+      let sourceType = 'webrtc';
+      let sourceFile = streamUrl;
 
-        hlsRef.current = hls;
-        hls.loadSource(streamUrl);
-        hls.attachMedia(videoRef.current);
+      // Convert HTTP URLs to WebSocket for WebRTC
+      if (streamUrl.startsWith('http://') || streamUrl.startsWith('https://')) {
+        sourceFile = streamUrl.replace(/^https?:\/\//, 'ws://');
+        if (!sourceFile.includes(':')) {
+          sourceFile = sourceFile.replace('ws://', 'ws://') + ':3333';
+        }
+      }
 
-        hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
-          console.log('HLS manifest parsed');
+      // Create OvenPlayer instance
+      const player = window.OvenPlayer?.create(playerId, {
+        sources: [{
+          type: sourceType,
+          file: sourceFile
+        }],
+        autoStart: true,
+        mute: true,
+        controls: false
+      });
+
+      if (player) {
+        playerInstanceRef.current = player;
+
+        // Set up event listeners
+        player.on('ready', () => {
+          console.log('OvenPlayer ready');
           setIsLoading(false);
-        });
-
-        hls.on(window.Hls.Events.FRAG_LOADED, () => {
-          console.log('Fragment loaded, clearing any previous errors');
           setError(null);
         });
 
-        hls.on(window.Hls.Events.ERROR, (_: string, data: HlsErrorData) => {
-          console.error('HLS error', data);
-          
-          if (data.fatal) {
-            switch (data.type) {
-              case window.Hls?.ErrorTypes.NETWORK_ERROR:
-                console.log('Fatal network error, attempting recovery...');
-                setError('Network error - attempting to recover...');
-                setTimeout(() => {
-                  if (hlsRef.current) {
-                    hlsRef.current.startLoad();
-                  }
-                }, 2000);
-                break;
-              
-              case window.Hls?.ErrorTypes.MEDIA_ERROR:
-                console.log('Fatal media error, attempting recovery...');
-                setError('Media error - attempting to recover...');
-                if (hlsRef.current) {
-                  hlsRef.current.recoverMediaError();
-                }
-                break;
-              
-              default:
-                console.log('Fatal error, cannot recover');
-                setError('Stream error: ' + data.details);
-                setIsLoading(false);
-                break;
-            }
-          } else {
-            // Non-fatal errors - handle buffer stalled error specifically
-            if (data.details.includes('bufferStalled')) {
-              console.log('Buffer stalled, attempting to recover...');
-              setError('Buffering issue - recovering...');
-              // Clear error after attempting recovery
-              setTimeout(() => {
-                setError(null);
-                if (hlsRef.current) {
-                  hlsRef.current.startLoad();
-                }
-              }, 3000);
-            } else {
-              console.log('Non-fatal HLS error:', data.details);
-              setError('Stream issue: ' + data.details);
-              // Clear non-fatal errors after a delay
-              setTimeout(() => setError(null), 5000);
-            }
-          }
-        });
-        
-        return () => {
-          if (hlsRef.current) {
-            hlsRef.current.destroy();
-            hlsRef.current = null;
-          }
-        };
-      } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-        // Safari native HLS
-        videoRef.current.src = streamUrl;
-        setIsLoading(false);
-      } else {
-        setError('HLS not supported');
-        setIsLoading(false);
-      }
-      return;
-    }
-
-    // If it's a WHEP (WebRTC) URL
-    if (streamUrl.endsWith('/whep')) {
-      (async () => {
-        try {
-          const pc = new RTCPeerConnection();
-          pc.ontrack = (event) => {
-            if (videoRef.current) {
-              videoRef.current.srcObject = event.streams[0];
-              setIsLoading(false);
-            }
-          };
-
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
-
-          const res = await fetch(streamUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/sdp' },
-            body: offer.sdp || '',
-          });
-
-          const answer = await res.text();
-          await pc.setRemoteDescription({ type: 'answer', sdp: answer });
-        } catch (err) {
-          console.error('WebRTC error', err);
-          const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-          setError('WebRTC connection failed: ' + errorMessage);
+        player.on('error', () => {
+          console.error('OvenPlayer error');
+          setError('Failed to load stream with OvenPlayer');
           setIsLoading(false);
-        }
-      })();
-      return;
-    }
+        });
 
-    // For direct video URLs (MP4, WebM, etc.) or local streams
-    if (videoRef.current) {
-      videoRef.current.src = streamUrl;
-      videoRef.current.load();
-    }
-    
-    const video = videoRef.current;
-    if (!video) return;
+        player.on('stateChanged', () => {
+          console.log('OvenPlayer state changed');
+        });
+      } else {
+        throw new Error('Failed to create OvenPlayer instance');
+      }
 
-    const handleLoadStart = () => setIsLoading(false);
-    const handleCanPlay = () => setIsLoading(false);
-    const handleError = () => {
-      setError('Failed to load video stream');
+    } catch (err) {
+      console.error('Error initializing OvenPlayer:', err);
+      setError('Error initializing player: ' + (err instanceof Error ? err.message : 'Unknown error'));
       setIsLoading(false);
-    };
-    
-    video.addEventListener('loadstart', handleLoadStart);
-    video.addEventListener('canplay', handleCanPlay);
-    video.addEventListener('error', handleError);
-    
-    return () => {
-      video.removeEventListener('loadstart', handleLoadStart);
-      video.removeEventListener('canplay', handleCanPlay);
-      video.removeEventListener('error', handleError);
-    };
-  }, [streamUrl, hlsLoaded]);
+    }
 
-  // Add retry functionality
+    return () => {
+      if (playerInstanceRef.current) {
+        try {
+          playerInstanceRef.current.remove();
+        } catch (err) {
+          console.error('Error cleaning up player:', err);
+        }
+        playerInstanceRef.current = null;
+      }
+    };
+  }, [streamUrl, ovenPlayerLoaded]);
+
+  // Retry functionality
   const retryStream = () => {
     console.log('Retrying stream...');
     setError(null);
     setIsLoading(true);
     
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
+    if (playerInstanceRef.current) {
+      try {
+        playerInstanceRef.current.remove();
+      } catch (err) {
+        console.error('Error removing player during retry:', err);
+      }
+      playerInstanceRef.current = null;
     }
     
     // Trigger re-initialization
     setTimeout(() => {
-      if (videoRef.current) {
-        videoRef.current.load();
-      }
+      setOvenPlayerLoaded(prev => !prev);
+      setTimeout(() => setOvenPlayerLoaded(true), 100);
     }, 1000);
   };
 
+  // Handle play/pause from parent component
+  useEffect(() => {
+    if (playerInstanceRef.current) {
+      if (isPlaying) {
+        playerInstanceRef.current.play();
+      } else {
+        playerInstanceRef.current.pause();
+      }
+    }
+  }, [isPlaying]);
+
   return (
     <div className="relative w-full bg-black aspect-video">
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        controls={false}
-        className="w-full h-full object-cover"
-      />
+      <div ref={playerContainerRef} className="w-full h-full" />
+      
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center text-white bg-black/70">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       )}
+      
       {error && (
         <div className="absolute inset-0 flex items-center justify-center text-white bg-black/70">
           <div className="text-center">
@@ -341,6 +256,7 @@ export default function LiveVideoViewer() {
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentTime, setCurrentTime] = useState<string>('');
   const [mounted, setMounted] = useState(false);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
 
   const { user, loading: authLoading } = useAuth();
   const { bots, loading: botsLoading, error } = useBots(user?.uid || null);
@@ -348,11 +264,18 @@ export default function LiveVideoViewer() {
   // Handle client-side mounting
   useEffect(() => {
     setMounted(true);
+    
+    // Only start time updates after mounting to avoid hydration mismatch
     const updateTime = () => {
       setCurrentTime(new Date().toLocaleTimeString());
     };
+    
+    // Set initial time
     updateTime();
+    
+    // Update time every second
     const interval = setInterval(updateTime, 1000);
+    
     return () => clearInterval(interval);
   }, []);
 
@@ -362,6 +285,28 @@ export default function LiveVideoViewer() {
       setSelectedBot(bots[0].id);
     }
   }, [bots, selectedBot]);
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).msFullscreenElement
+      );
+      setIsFullscreen(isCurrentlyFullscreen);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
 
   const currentBot = bots.find(bot => bot.id === selectedBot);
 
@@ -393,8 +338,53 @@ export default function LiveVideoViewer() {
     return bot?.stream_url && bot?.stream_url.trim() !== '';
   };
 
-  // Show loading state until mounted
-  if (!mounted || authLoading || botsLoading) {
+  // Handle fullscreen toggle
+  const toggleFullscreen = async () => {
+    if (!videoContainerRef.current) return;
+
+    try {
+      if (!isFullscreen) {
+        // Enter fullscreen
+        if (videoContainerRef.current.requestFullscreen) {
+          await videoContainerRef.current.requestFullscreen();
+        } else if ((videoContainerRef.current as any).webkitRequestFullscreen) {
+          await (videoContainerRef.current as any).webkitRequestFullscreen();
+        } else if ((videoContainerRef.current as any).msRequestFullscreen) {
+          await (videoContainerRef.current as any).msRequestFullscreen();
+        }
+      } else {
+        // Exit fullscreen
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        } else if ((document as any).msExitFullscreen) {
+          await (document as any).msExitFullscreen();
+        }
+      }
+    } catch (error) {
+      console.error('Fullscreen toggle failed:', error);
+    }
+  };
+
+  // Handle play/pause toggle
+  const togglePlayPause = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  // Don't render anything until mounted to avoid hydration issues
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (authLoading || botsLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -496,19 +486,23 @@ export default function LiveVideoViewer() {
               </div>
               
               {/* Video Player */}
-              <div className="relative bg-black aspect-video">
+              <div ref={videoContainerRef} className="relative bg-black aspect-video">
                 {isOnline(currentBot) && currentBot && currentBot.stream_url ? (
                   <div className="absolute inset-0">
-                    {/* Simplified Live Player */}
-                    <SimpleLivePlayer streamUrl={currentBot.stream_url} />
+                    {/* OvenPlayer Video Component */}
+                    <OvenPlayerVideo 
+                      streamUrl={currentBot.stream_url} 
+                      isPlaying={isPlaying}
+                      onPlayStateChange={setIsPlaying}
+                    />
                     
                     {/* Timestamp overlay */}
-                    <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-                      LIVE • {currentTime}
+                    <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded z-10">
+                      LIVE{currentTime && ` • ${currentTime}`}
                     </div>
                     
                     {/* Bot info overlay */}
-                    <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                    <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded z-10">
                       <div className="flex items-center space-x-3">
                         <div className="flex items-center space-x-1">
                           <Battery className="h-3 w-3" />
@@ -526,8 +520,9 @@ export default function LiveVideoViewer() {
                     </div>
                     
                     {/* Stream URL display for debugging */}
-                    <div className="absolute bottom-10 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded max-w-md">
+                    <div className="absolute bottom-10 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded max-w-md z-10">
                       <div>Stream: {currentBot.stream_url}</div>
+                      <div>Player: OvenPlayer</div>
                     </div>
                   </div>
                 ) : (
@@ -546,39 +541,17 @@ export default function LiveVideoViewer() {
                 )}
                 
                 {/* Video Controls Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <button 
-                        onClick={() => setIsPlaying(!isPlaying)}
-                        className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors"
-                      >
-                        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                      </button>
-                      <button className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors">
-                        <SkipBack className="h-4 w-4" />
-                      </button>
-                      <button className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors">
-                        <SkipForward className="h-4 w-4" />
-                      </button>
+                      {/* Pause button removed */}
                     </div>
                     
                     <div className="flex items-center space-x-2">
                       <button 
-                        onClick={() => setIsMuted(!isMuted)}
+                        onClick={toggleFullscreen}
                         className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors"
-                      >
-                        {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                      </button>
-                      <button className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors">
-                        <Camera className="h-4 w-4" />
-                      </button>
-                      <button className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors">
-                        <RotateCw className="h-4 w-4" />
-                      </button>
-                      <button 
-                        onClick={() => setIsFullscreen(!isFullscreen)}
-                        className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors"
+                        title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
                       >
                         {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
                       </button>
