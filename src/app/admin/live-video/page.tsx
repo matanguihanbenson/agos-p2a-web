@@ -3,21 +3,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   VideoOff, 
-  Volume2, 
-  VolumeX, 
   Maximize, 
   Minimize,
-  RotateCw,
-  Camera,
   Circle,
   Download,
   Wifi,
   Battery,
   MapPin,
-  Pause,
-  Play,
-  SkipBack,
-  SkipForward,
   Loader2
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -52,10 +44,8 @@ interface OvenPlayerInstance {
 }
 
 // OvenPlayer Video Component
-function OvenPlayerVideo({ streamUrl, isPlaying, onPlayStateChange }: { 
+function OvenPlayerVideo({ streamUrl }: { 
   streamUrl: string; 
-  isPlaying: boolean;
-  onPlayStateChange: (playing: boolean) => void;
 }) {
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const playerInstanceRef = useRef<OvenPlayerInstance | null>(null);
@@ -124,7 +114,7 @@ function OvenPlayerVideo({ streamUrl, isPlaying, onPlayStateChange }: {
       playerContainerRef.current?.appendChild(playerDiv);
 
       // Determine source type and format URL
-      let sourceType = 'webrtc';
+      const sourceType = 'webrtc';
       let sourceFile = streamUrl;
 
       // Convert HTTP URLs to WebSocket for WebRTC
@@ -209,17 +199,6 @@ function OvenPlayerVideo({ streamUrl, isPlaying, onPlayStateChange }: {
     }, 1000);
   };
 
-  // Handle play/pause from parent component
-  useEffect(() => {
-    if (playerInstanceRef.current) {
-      if (isPlaying) {
-        playerInstanceRef.current.play();
-      } else {
-        playerInstanceRef.current.pause();
-      }
-    }
-  }, [isPlaying]);
-
   return (
     <div className="relative w-full bg-black aspect-video">
       <div ref={playerContainerRef} className="w-full h-full" />
@@ -251,9 +230,7 @@ function OvenPlayerVideo({ streamUrl, isPlaying, onPlayStateChange }: {
 export default function LiveVideoViewer() {
   const [selectedBot, setSelectedBot] = useState<string>('');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(true);
   const [currentTime, setCurrentTime] = useState<string>('');
   const [mounted, setMounted] = useState(false);
   const videoContainerRef = useRef<HTMLDivElement>(null);
@@ -291,8 +268,8 @@ export default function LiveVideoViewer() {
     const handleFullscreenChange = () => {
       const isCurrentlyFullscreen = !!(
         document.fullscreenElement ||
-        (document as any).webkitFullscreenElement ||
-        (document as any).msFullscreenElement
+        (document as unknown as { webkitFullscreenElement?: Element }).webkitFullscreenElement ||
+        (document as unknown as { msFullscreenElement?: Element }).msFullscreenElement
       );
       setIsFullscreen(isCurrentlyFullscreen);
     };
@@ -345,21 +322,22 @@ export default function LiveVideoViewer() {
     try {
       if (!isFullscreen) {
         // Enter fullscreen
-        if (videoContainerRef.current.requestFullscreen) {
-          await videoContainerRef.current.requestFullscreen();
-        } else if ((videoContainerRef.current as any).webkitRequestFullscreen) {
-          await (videoContainerRef.current as any).webkitRequestFullscreen();
-        } else if ((videoContainerRef.current as any).msRequestFullscreen) {
-          await (videoContainerRef.current as any).msRequestFullscreen();
+        const element = videoContainerRef.current;
+        if (element.requestFullscreen) {
+          await element.requestFullscreen();
+        } else if ((element as unknown as { webkitRequestFullscreen?: () => Promise<void> }).webkitRequestFullscreen) {
+          await (element as unknown as { webkitRequestFullscreen: () => Promise<void> }).webkitRequestFullscreen();
+        } else if ((element as unknown as { msRequestFullscreen?: () => Promise<void> }).msRequestFullscreen) {
+          await (element as unknown as { msRequestFullscreen: () => Promise<void> }).msRequestFullscreen();
         }
       } else {
         // Exit fullscreen
         if (document.exitFullscreen) {
           await document.exitFullscreen();
-        } else if ((document as any).webkitExitFullscreen) {
-          await (document as any).webkitExitFullscreen();
-        } else if ((document as any).msExitFullscreen) {
-          await (document as any).msExitFullscreen();
+        } else if ((document as unknown as { webkitExitFullscreen?: () => Promise<void> }).webkitExitFullscreen) {
+          await (document as unknown as { webkitExitFullscreen: () => Promise<void> }).webkitExitFullscreen();
+        } else if ((document as unknown as { msExitFullscreen?: () => Promise<void> }).msExitFullscreen) {
+          await (document as unknown as { msExitFullscreen: () => Promise<void> }).msExitFullscreen();
         }
       }
     } catch (error) {
@@ -367,10 +345,6 @@ export default function LiveVideoViewer() {
     }
   };
 
-  // Handle play/pause toggle
-  const togglePlayPause = () => {
-    setIsPlaying(!isPlaying);
-  };
 
   // Don't render anything until mounted to avoid hydration issues
   if (!mounted) {
@@ -492,8 +466,6 @@ export default function LiveVideoViewer() {
                     {/* OvenPlayer Video Component */}
                     <OvenPlayerVideo 
                       streamUrl={currentBot.stream_url} 
-                      isPlaying={isPlaying}
-                      onPlayStateChange={setIsPlaying}
                     />
                     
                     {/* Timestamp overlay */}
