@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  VideoOff, 
-  Maximize, 
+import {
+  VideoOff,
+  Maximize,
   Minimize,
   Circle,
   Download,
@@ -44,8 +44,8 @@ interface OvenPlayerInstance {
 }
 
 // OvenPlayer Video Component
-function OvenPlayerVideo({ streamUrl }: { 
-  streamUrl: string; 
+function OvenPlayerVideo({ streamUrl }: {
+  streamUrl: string;
 }) {
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const playerInstanceRef = useRef<OvenPlayerInstance | null>(null);
@@ -105,7 +105,7 @@ function OvenPlayerVideo({ streamUrl }: {
     try {
       // Create unique player ID
       const playerId = `oven-player-${Date.now()}`;
-      
+
       // Create player div
       const playerDiv = document.createElement('div');
       playerDiv.id = playerId;
@@ -119,10 +119,16 @@ function OvenPlayerVideo({ streamUrl }: {
 
       // Convert HTTP URLs to WebSocket for WebRTC
       if (streamUrl.startsWith('http://') || streamUrl.startsWith('https://')) {
-        sourceFile = streamUrl.replace(/^https?:\/\//, 'ws://');
+        // Use WSS for HTTPS sites (production), WS for HTTP sites (local development)
+        const isSecure = window.location.protocol === 'https:';
+        const wsProtocol = isSecure ? 'wss://' : 'ws://';
+
+        sourceFile = streamUrl.replace(/^https?:\/\//, wsProtocol);
         if (!sourceFile.includes(':')) {
-          sourceFile = sourceFile.replace('ws://', 'ws://') + ':3333';
+          sourceFile = sourceFile.replace(wsProtocol, wsProtocol) + ':3333';
         }
+
+        console.log(`Converting ${streamUrl} to ${sourceFile} (secure: ${isSecure})`);
       }
 
       // Create OvenPlayer instance
@@ -182,7 +188,7 @@ function OvenPlayerVideo({ streamUrl }: {
     console.log('Retrying stream...');
     setError(null);
     setIsLoading(true);
-    
+
     if (playerInstanceRef.current) {
       try {
         playerInstanceRef.current.remove();
@@ -191,7 +197,7 @@ function OvenPlayerVideo({ streamUrl }: {
       }
       playerInstanceRef.current = null;
     }
-    
+
     // Trigger re-initialization
     setTimeout(() => {
       setOvenPlayerLoaded(prev => !prev);
@@ -202,19 +208,19 @@ function OvenPlayerVideo({ streamUrl }: {
   return (
     <div className="relative w-full bg-black aspect-video">
       <div ref={playerContainerRef} className="w-full h-full" />
-      
+
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center text-white bg-black/70">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       )}
-      
+
       {error && (
         <div className="absolute inset-0 flex items-center justify-center text-white bg-black/70">
           <div className="text-center">
             <VideoOff className="h-12 w-12 mx-auto mb-2" />
             <p className="text-sm mb-3">{error}</p>
-            <button 
+            <button
               onClick={retryStream}
               className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
             >
@@ -241,18 +247,18 @@ export default function LiveVideoViewer() {
   // Handle client-side mounting
   useEffect(() => {
     setMounted(true);
-    
+
     // Only start time updates after mounting to avoid hydration mismatch
     const updateTime = () => {
       setCurrentTime(new Date().toLocaleTimeString());
     };
-    
+
     // Set initial time
     updateTime();
-    
+
     // Update time every second
     const interval = setInterval(updateTime, 1000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -402,15 +408,14 @@ export default function LiveVideoViewer() {
               <h1 className="text-2xl font-bold text-gray-900">Live Video Viewer</h1>
               <p className="text-gray-600 text-sm">Monitor onboard cameras from AGOS bots in real-time</p>
             </div>
-            
+
             <div className="flex items-center space-x-2">
-              <button 
+              <button
                 onClick={() => setIsRecording(!isRecording)}
-                className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  isRecording 
-                    ? 'bg-red-600 text-white hover:bg-red-700' 
+                className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${isRecording
+                    ? 'bg-red-600 text-white hover:bg-red-700'
                     : 'bg-gray-600 text-white hover:bg-gray-700'
-                }`}
+                  }`}
               >
                 <Circle className="h-3 w-3 mr-1" />
                 {isRecording ? 'Stop Recording' : 'Start Recording'}
@@ -446,7 +451,7 @@ export default function LiveVideoViewer() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     {isRecording && (
                       <div className="flex items-center space-x-1 text-red-600">
@@ -458,21 +463,21 @@ export default function LiveVideoViewer() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Video Player */}
               <div ref={videoContainerRef} className="relative bg-black aspect-video">
                 {isOnline(currentBot) && currentBot && currentBot.stream_url ? (
                   <div className="absolute inset-0">
                     {/* OvenPlayer Video Component */}
-                    <OvenPlayerVideo 
-                      streamUrl={currentBot.stream_url} 
+                    <OvenPlayerVideo
+                      streamUrl={currentBot.stream_url}
                     />
-                    
+
                     {/* Timestamp overlay */}
                     <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded z-10">
                       LIVE{currentTime && ` • ${currentTime}`}
                     </div>
-                    
+
                     {/* Bot info overlay */}
                     <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded z-10">
                       <div className="flex items-center space-x-3">
@@ -490,7 +495,7 @@ export default function LiveVideoViewer() {
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Stream URL display for debugging */}
                     <div className="absolute bottom-10 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded max-w-md z-10">
                       <div>Stream: {currentBot.stream_url}</div>
@@ -503,24 +508,24 @@ export default function LiveVideoViewer() {
                       <VideoOff className="h-12 w-12 mx-auto mb-2" />
                       <p className="text-sm font-medium">Camera Offline</p>
                       <p className="text-xs">
-                        {currentBot?.stream_url 
-                          ? 'Stream URL available but video not loading' 
+                        {currentBot?.stream_url
+                          ? 'Stream URL available but video not loading'
                           : 'No stream URL available'
                         }
                       </p>
                     </div>
                   </div>
                 )}
-                
+
                 {/* Video Controls Overlay */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       {/* Pause button removed */}
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
-                      <button 
+                      <button
                         onClick={toggleFullscreen}
                         className="p-1.5 bg-white/20 hover:bg-white/30 rounded text-white transition-colors"
                         title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
@@ -593,11 +598,10 @@ export default function LiveVideoViewer() {
                     <button
                       key={bot.id}
                       onClick={() => setSelectedBot(bot.id)}
-                      className={`w-full text-left p-2 rounded border transition-colors ${
-                        selectedBot === bot.id
+                      className={`w-full text-left p-2 rounded border transition-colors ${selectedBot === bot.id
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
@@ -607,7 +611,7 @@ export default function LiveVideoViewer() {
                             <p className="text-xs text-gray-600">{bot.name}</p>
                           </div>
                         </div>
-                        
+
                         <div className="text-right">
                           <p className={`text-xs font-medium ${getStatusColor(bot.realtimeData?.status || bot.status)}`}>
                             {bot.realtimeData?.status || bot.status}
